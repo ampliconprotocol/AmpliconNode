@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package node;
+// The RPC for a node are defined below.
+service Node {
+  rpc GetPeersList(GetPeersListRequest) returns (GetPeersListResponse) {}
+  rpc AddNodeToPeersList(AddNodeToPeersListRequest) returns (AddNodeToPeersListResponse) {}
+  rpc ConnectAsPeer(ConnectAsPeerRequest) returns (ConnectAsPeerResponse) {}
+  rpc IsNodeLive(IsNodeLiveRequest) returns (IsNodeLiveResponse) {}
+  rpc RelayMessage(RelayMessageRequest) returns (RelayMessageResponse) {}
+}
+
+// NextId: 3
+message Version{
+  uint32 major_version = 1;
+  uint32 minor_version = 2;
+}
+// Identifies if the RPC channel is secure or unsecure. The secure option currently only supports SSL.
+enum NodeSupportedCommunicationTypes{
+  UNKNOWN = 0;
+  SECURE = 1;
+  UNSECURE = 2;
+  SECURE_AND_UNSECURE = 3;
+}
+
+// Contains information to uniquely describe a node.
+// NextId: 5
+message NodeInfo{
+  // A 16 hex-bytes long node-id
+  string node_id = 1;
+  // The fully-qualified node address. It's a host:port combination.
+  string node_address = 2;
+  // The software version the node is running. Major versions start at 0, minor versions start at 1.
+  Version software_version = 3;
+  // Whether the node supports secure, unsecure, or both gRPC communication types.
+  NodeSupportedCommunicationTypes supported_communication_types = 4;
+}
+
+// Contains secret data of a node. This is never to be shared with a second party.
+// NextId: 3
+message NodeSecret{
+  // A ed25519 private key.
+  string secret_private_key = 1;
+  string secret_node_primer = 2;
+  // An integer indicating the threshold values for message Amplicons, below which the messages are dropped.
+  uint64 secret_amplicon_threshold = 3;
+}
+
+// Contains all publicly publishable descriptions and private secrets of a node.
+// NextId: 3
+message NodeProperties{
+  NodeInfo info = 1;
+  NodeSecret secrets = 2;
+}
+
+// NextId: 3
+message ResponseStatus{
+  bool is_successful = 1;
+  string status_text = 2;
+}
+
+// NextId: 4
+message GetPeersListRequest{
+  NodeInfo requesting_node = 1;
+  uint32 max_desired_peers = 2;
+  uint64 request_utc_timestamp_nanos = 3;
+}
+
+// NextId: 3
+message GetPeersListResponse{
+  repeated NodeInfo peers_list = 1;
+  uint64 response_utc_timestamp_nanos = 2;
+}
+
+// NextId: 3
+message AddNodeToPeersListRequest{
+  NodeInfo requesting_node = 1;
+  uint64 request_utc_timestamp_nanos = 2;
+}
+
+// NextId: 4
+message AddNodeToPeersListResponse{
+  NodeInfo responding_node = 1;
+  ResponseStatus response_status = 2;
+  uint64 response_utc_timestamp_nanos = 3;
+}
+
+// NextId: 3
+message ConnectAsPeerRequest{
+  NodeInfo requesting_node = 1;
+  uint64 request_utc_timestamp_nanos = 2;
+}
+
+//nextId:4
+message ConnectAsPeerResponse{
+  NodeInfo responding_node = 1;
+  ResponseStatus response_status = 2;
+  uint64 response_utc_timestamp_nanos = 3;
+}
+
+// NextId: 3
+message IsNodeLiveRequest{
+  NodeInfo requesting_node = 1;
+  uint64 request_utc_timestamp_nanos = 2;
+}
+
+// NextId: 4
+message IsNodeLiveResponse{
+  NodeInfo responding_node = 1;
+  bool is_live = 2;
+  uint64 response_utc_timestamp_nanos = 3;
+}
+
+// NextId: 7
+message EncryptedMessage{
+  string message_id = 1;
+  bytes encrypted_message_content = 2;
+  uint64 message_nonce = 3;
+  uint64 whole_message_hash = 4;
+  uint64 first_block_hash = 5;
+  string message_dna = 6;
+}
+
+// NextId: 5
+message RelayMessageRequest{
+  EncryptedMessage message = 1;
+  NodeInfo requesting_node = 2;
+  string destination_id = 3;
+  uint64 request_utc_timestamp_nanos = 4;
+}
+
+// NextId: 5
+message RelayMessageResponse{
+  ResponseStatus status = 1;
+  NodeInfo responding_node = 2;
+  string message_id = 3;
+  uint64 response_utc_timestamp_nanos = 4;
+}

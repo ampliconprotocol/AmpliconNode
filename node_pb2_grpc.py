@@ -6,7 +6,8 @@ import node_pb2 as node__pb2
 
 
 class NodeStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """The RPC for a node are defined below.
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -24,6 +25,11 @@ class NodeStub(object):
                 request_serializer=node__pb2.AddNodeToPeersListRequest.SerializeToString,
                 response_deserializer=node__pb2.AddNodeToPeersListResponse.FromString,
                 )
+        self.ConnectAsPeer = channel.unary_unary(
+                '/node.Node/ConnectAsPeer',
+                request_serializer=node__pb2.ConnectAsPeerRequest.SerializeToString,
+                response_deserializer=node__pb2.ConnectAsPeerResponse.FromString,
+                )
         self.IsNodeLive = channel.unary_unary(
                 '/node.Node/IsNodeLive',
                 request_serializer=node__pb2.IsNodeLiveRequest.SerializeToString,
@@ -37,7 +43,8 @@ class NodeStub(object):
 
 
 class NodeServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """The RPC for a node are defined below.
+    """
 
     def GetPeersList(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -46,6 +53,12 @@ class NodeServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def AddNodeToPeersList(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ConnectAsPeer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -76,6 +89,11 @@ def add_NodeServicer_to_server(servicer, server):
                     request_deserializer=node__pb2.AddNodeToPeersListRequest.FromString,
                     response_serializer=node__pb2.AddNodeToPeersListResponse.SerializeToString,
             ),
+            'ConnectAsPeer': grpc.unary_unary_rpc_method_handler(
+                    servicer.ConnectAsPeer,
+                    request_deserializer=node__pb2.ConnectAsPeerRequest.FromString,
+                    response_serializer=node__pb2.ConnectAsPeerResponse.SerializeToString,
+            ),
             'IsNodeLive': grpc.unary_unary_rpc_method_handler(
                     servicer.IsNodeLive,
                     request_deserializer=node__pb2.IsNodeLiveRequest.FromString,
@@ -94,7 +112,8 @@ def add_NodeServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Node(object):
-    """Missing associated documentation comment in .proto file."""
+    """The RPC for a node are defined below.
+    """
 
     @staticmethod
     def GetPeersList(request,
@@ -127,6 +146,23 @@ class Node(object):
         return grpc.experimental.unary_unary(request, target, '/node.Node/AddNodeToPeersList',
             node__pb2.AddNodeToPeersListRequest.SerializeToString,
             node__pb2.AddNodeToPeersListResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ConnectAsPeer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/node.Node/ConnectAsPeer',
+            node__pb2.ConnectAsPeerRequest.SerializeToString,
+            node__pb2.ConnectAsPeerResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
