@@ -41,8 +41,6 @@ def is_valid_hostname(hostname: str) -> bool:
 def is_valid_node_info(node_info: node_pb2.NodeInfo) -> bool:
     if is_empty_object(node_info):
         return False
-    if is_empty_string(node_info.node_id):
-        return False
     if not is_valid_hostname(node_info.node_address):
         return False
     return True
@@ -54,28 +52,7 @@ def get_node_hash(node_info: node_pb2.NodeInfo) -> str:
     return hashlib.sha1(node_info.node_address).hexdigest()
 
 
-def has_valid_message_amplicon(message_dna: str, secret_node_primer: str, secret_node_amplicon_threshold: int) -> bool:
-    first_index = message_dna.find(secret_node_primer)
-    if first_index == -1:  # index not found
-        return False
-    last_index = message_dna.rfind(secret_node_primer)
-    if last_index - first_index >= secret_node_amplicon_threshold:
-        return True
-    return False
 
-
-def should_message_be_relayed(encrypted_message: node_pb2.EncryptedMessage,
-                              current_node_properties: node_pb2.NodeProperties) -> bool:
-    if is_empty_object(current_node_properties) or is_empty_object(current_node_properties.secrets) or is_empty_string(
-            current_node_properties.secrets.secret_node_primer):
-        raise ValueError("Invalid current node properties passed.")
-    if is_empty_object(encrypted_message) or is_empty_string(encrypted_message.message_dna):
-        raise ValueError("Invalid encrypted message passed.")
-
-    if has_valid_message_amplicon(encrypted_message.message_dna, current_node_properties.secrets.secret_node_primer,
-                                  current_node_properties.secrets.secret_amplicon_threshold):
-        return True
-    return False
 
 
 def get_timestamp_now_ns() -> int:

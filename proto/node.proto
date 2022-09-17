@@ -21,23 +21,24 @@ enum NodeSupportedCommunicationTypes{
   SECURE = 1;
   UNSECURE = 2;
   SECURE_AND_UNSECURE = 3;
+  SECURE_STREAM = 4;
+  UNSECURE_STREAM = 5;
+  SECURE_AND_UNSECURE_STREAM = 6;
 }
 
 // Contains information to uniquely describe a node.
-// NextId: 5
+// NextId: 4
 message NodeInfo{
-  // A 16 hex-bytes long node-id
-  string node_id = 1;
   // The fully-qualified node address. It's a host:port combination.
-  string node_address = 2;
+  string node_address = 1;
   // The software version the node is running. Major versions start at 0, minor versions start at 1.
-  Version software_version = 3;
+  Version software_version = 2;
   // Whether the node supports secure, unsecure, or both gRPC communication types.
-  NodeSupportedCommunicationTypes supported_communication_types = 4;
+  NodeSupportedCommunicationTypes supported_communication_types = 3;
 }
 
 // Contains secret data of a node. This is never to be shared with a second party.
-// NextId: 3
+// NextId: 4
 message NodeSecret{
   // A ed25519 private key.
   string secret_private_key = 1;
@@ -47,10 +48,15 @@ message NodeSecret{
 }
 
 // Contains all publicly publishable descriptions and private secrets of a node.
-// NextId: 3
+// NextId: 8
 message NodeProperties{
-  NodeInfo info = 1;
-  NodeSecret secrets = 2;
+  NodeInfo node_info = 1;
+  NodeSecret node_secrets = 2;
+  uint32 max_peers = 3;
+  bool can_exceed_max_peers_if_destination_node_not_reachable = 4;
+  uint32 max_time_to_wait_for_destination_node_response_ms = 5;
+  bool non_local_forwarding_enabled = 6;
+  repeated NodeInfo bootstrap_peers_list = 7;
 }
 
 // NextId: 3
@@ -111,14 +117,11 @@ message IsNodeLiveResponse{
   uint64 response_utc_timestamp_nanos = 3;
 }
 
-// NextId: 7
+// NextId: 4
 message EncryptedMessage{
   string message_id = 1;
   bytes encrypted_message_content = 2;
-  uint64 message_nonce = 3;
-  uint64 whole_message_hash = 4;
-  uint64 first_block_hash = 5;
-  string message_dna = 6;
+  string message_dna = 3;
 }
 
 // NextId: 5
