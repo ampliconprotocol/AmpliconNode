@@ -13,8 +13,8 @@ import node_pb2_grpc
 
 class Node(node_pb2_grpc.NodeServicer):
     def __init__(self, node_properties: node_pb2.NodeProperties):
-        self.node_info = node_properties.info
-        self.node_secret = node_properties.secrets
+        self.node_info = node_properties.node_info
+        self.node_secret = node_properties.node_secrets
         self.thread_lock = Lock()
         self.peer_node_hash_to_node_info = {}  # node_hash -> node_info
         self.peer_node_hash_to_channel = {}  # node_hash -> grpc_channel
