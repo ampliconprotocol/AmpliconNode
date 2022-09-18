@@ -52,8 +52,5 @@ def get_node_hash(node_info: node_pb2.NodeInfo) -> str:
     return hashlib.sha1(node_info.node_address).hexdigest()
 
 
-
-
-
 def get_timestamp_now_ns() -> int:
     return time.time_ns()
