@@ -5,6 +5,7 @@ from nacl.exceptions import CryptoError
 
 import common_utils
 import node_pb2
+from random import choices
 
 
 def is_valid_encrypted_message(encrypted_message: node_pb2.EncryptedMessage) -> bool:
@@ -69,3 +70,6 @@ def should_message_be_relayed(encrypted_message: node_pb2.EncryptedMessage,
     return False
 
 
+def generate_primer_or_dna_string(desired_length, allowed_characters="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    output = ''.join(choices(allowed_characters, k=desired_length))
+    return output

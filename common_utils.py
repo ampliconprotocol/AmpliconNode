@@ -21,6 +21,14 @@ def is_empty_string(input_str: str) -> bool:
     return False
 
 
+def is_empty_list(input_list) -> bool:
+    if not isinstance(input_list, list):
+        raise ValueError("Input is not a list, a list type object was expected.")
+    if len(input_list) == 0:
+        return True
+    return False
+
+
 def is_empty_bytes(input_bytes: bytes) -> bool:
     if not isinstance(input_bytes, bytes):
         raise ValueError("Input is not a bytes string, a bytes type input was expected.")
@@ -54,3 +62,7 @@ def get_node_hash(node_info: node_pb2.NodeInfo) -> str:
 
 def get_timestamp_now_ns() -> int:
     return time.time_ns()
+
+
+def convert_seconds_to_ns(seconds: float) -> int:
+    return int(seconds * 10 ** 9)

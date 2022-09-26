@@ -5,14 +5,17 @@ from threading import Lock
 import grpc
 
 import common_utils
+import grpc_utils
 import message_center
 import message_utils
 import node_pb2
 import node_pb2_grpc
+from thread_pool_with_run_delay import ThreadPoolWithRunDelay
 
 
 class Node(node_pb2_grpc.NodeServicer):
     def __init__(self, node_properties: node_pb2.NodeProperties):
+        super().__init__()
         self.node_info = node_properties.node_info
         self.node_secret = node_properties.node_secrets
         self.thread_lock = Lock()
@@ -22,12 +25,10 @@ class Node(node_pb2_grpc.NodeServicer):
         self.listed_nodes_info = []
         self.is_ready_to_accept_connections = True
         self.message_center = message_center.MessageCenter()
-        super().__init__()
-
-    def __can_accept_connections(self) -> bool:
-        if self.is_ready_to_accept_connections:
-            return True
-        return False
+        self.thread_pool = ThreadPoolWithRunDelay()
+        self.max_connection_attempts_with_peer = 10
+        self.wait_time_between_connection_attempts_with_peer_ns = common_utils.convert_seconds_to_ns(10)
+        self.__connect_to_bootstrap_or_known_peers(node_properties.bootstrap_peers_list)
 
     def GetPeersList(self, request: node_pb2.GetPeersListRequest, context) -> node_pb2.GetPeersListResponse:
         logging.info(" Got a GetPeerNodes request from : %s for %d peers at timestamp %d",
@@ -99,3 +100,40 @@ class Node(node_pb2_grpc.NodeServicer):
         self.message_center.relay_message_to_connections(request, self.node_info, self.peer_node_hash_to_channel)
         self.thread_lock.release()
         return successful_response
+
+    def connect_to_peer(self, peer_node_info: node_pb2.NodeInfo):
+        self.thread_pool.add_job(job_to_run=self.__connect_to_peer_with_retry, parameters=(peer_node_info, 0))
+
+    def connect_to_bootstrap_or_known_peers(self, peer_nodes_info: [node_pb2.NodeInfo]):
+        if common_utils.is_empty_list(peer_nodes_info):
+            return
+        for peer_node_info in peer_nodes_info:
+            self.connect_to_peer(peer_node_info)
+
+    def __can_accept_connections(self) -> bool:
+        if self.is_ready_to_accept_connections:
+            return True
+        return False
+
+    def __connect_to_peer_with_retry(self, peer_node_info: node_pb2.NodeInfo, try_count=0):
+        if not grpc_utils.check_if_host_has_active_grpc_insecure_channel_server(peer_node_info.node_address):
+            if try_count + 1 < self.max_connection_attempts_with_peer:
+                self.thread_pool.add_job(job_to_run=self.__connect_to_peer_with_retry,
+                                         parameters=(peer_node_info, try_count + 1),
+                                         run_delay_from_now_ns=self.wait_time_between_connection_attempts_with_peer_ns)
+            return
+        channel = grpc.insecure_channel(peer_node_info.node_address)
+        node_hash = common_utils.get_node_hash(peer_node_info)
+        stub = node_pb2_grpc.NodeStub(channel)
+        _ = stub.ConnectAsPeer(
+            node_pb2.ConnectAsPeerRequest(requesting_node=self.node_info,
+                                          request_utc_timestamp_nanos=common_utils.get_timestamp_now_ns()))
+        self.thread_lock.acquire()
+        self.peer_node_hash_to_channel[node_hash] = channel
+        self.peer_node_hash_to_node_info[node_hash] = peer_node_info
+        self.thread_lock.release()
+        return
+
+    def __connect_to_bootstrap_or_known_peers(self, peers_node_info:[node_pb2.NodeInfo]):
+        for peer_node_info in peers_node_info:
+            self.connect_to_peer(peer_node_info)

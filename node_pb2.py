@@ -15,10 +15,12 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nnode.proto\x12\x04node\"7\n\x07Version\x12\x15\n\rmajor_version\x18\x01 \x01(\r\x12\x15\n\rminor_version\x18\x02 \x01(\r\"\x97\x01\n\x08NodeInfo\x12\x14\n\x0cnode_address\x18\x01 \x01(\t\x12\'\n\x10software_version\x18\x02 \x01(\x0b\x32\r.node.Version\x12L\n\x1dsupported_communication_types\x18\x03 \x01(\x0e\x32%.node.NodeSupportedCommunicationTypes\"g\n\nNodeSecret\x12\x1a\n\x12secret_private_key\x18\x01 \x01(\t\x12\x1a\n\x12secret_node_primer\x18\x02 \x01(\t\x12!\n\x19secret_amplicon_threshold\x18\x03 \x01(\x04\"\xbd\x02\n\x0eNodeProperties\x12!\n\tnode_info\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12&\n\x0cnode_secrets\x18\x02 \x01(\x0b\x32\x10.node.NodeSecret\x12\x11\n\tmax_peers\x18\x03 \x01(\r\x12>\n6can_exceed_max_peers_if_destination_node_not_reachable\x18\x04 \x01(\x08\x12\x39\n1max_time_to_wait_for_destination_node_response_ms\x18\x05 \x01(\r\x12$\n\x1cnon_local_forwarding_enabled\x18\x06 \x01(\x08\x12,\n\x14\x62ootstrap_peers_list\x18\x07 \x03(\x0b\x32\x0e.node.NodeInfo\"<\n\x0eResponseStatus\x12\x15\n\ris_successful\x18\x01 \x01(\x08\x12\x13\n\x0bstatus_text\x18\x02 \x01(\t\"~\n\x13GetPeersListRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x19\n\x11max_desired_peers\x18\x02 \x01(\r\x12#\n\x1brequest_utc_timestamp_nanos\x18\x03 \x01(\x04\"`\n\x14GetPeersListResponse\x12\"\n\npeers_list\x18\x01 \x03(\x0b\x32\x0e.node.NodeInfo\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x02 \x01(\x04\"i\n\x19\x41\x64\x64NodeToPeersListRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"\x9a\x01\n\x1a\x41\x64\x64NodeToPeersListResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12-\n\x0fresponse_status\x18\x02 \x01(\x0b\x32\x14.node.ResponseStatus\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"d\n\x14\x43onnectAsPeerRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"\x95\x01\n\x15\x43onnectAsPeerResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12-\n\x0fresponse_status\x18\x02 \x01(\x0b\x32\x14.node.ResponseStatus\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"a\n\x11IsNodeLiveRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"t\n\x12IsNodeLiveResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x0f\n\x07is_live\x18\x02 \x01(\x08\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"^\n\x10\x45ncryptedMessage\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12!\n\x19\x65ncrypted_message_content\x18\x02 \x01(\x0c\x12\x13\n\x0bmessage_dna\x18\x03 \x01(\t\"\xa4\x01\n\x13RelayMessageRequest\x12\'\n\x07message\x18\x01 \x01(\x0b\x32\x16.node.EncryptedMessage\x12\'\n\x0frequesting_node\x18\x02 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x16\n\x0e\x64\x65stination_id\x18\x03 \x01(\t\x12#\n\x1brequest_utc_timestamp_nanos\x18\x04 \x01(\x04\"\x9f\x01\n\x14RelayMessageResponse\x12$\n\x06status\x18\x01 \x01(\x0b\x32\x14.node.ResponseStatus\x12\'\n\x0fresponding_node\x18\x02 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x12\n\nmessage_id\x18\x03 \x01(\t\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x04 \x01(\x04*\xa9\x01\n\x1fNodeSupportedCommunicationTypes\x12\x0b\n\x07UNKNOWN\x10\x00\x12\n\n\x06SECURE\x10\x01\x12\x0c\n\x08UNSECURE\x10\x02\x12\x17\n\x13SECURE_AND_UNSECURE\x10\x03\x12\x11\n\rSECURE_STREAM\x10\x04\x12\x13\n\x0fUNSECURE_STREAM\x10\x05\x12\x1e\n\x1aSECURE_AND_UNSECURE_STREAM\x10\x06\x32\x82\x03\n\x04Node\x12G\n\x0cGetPeersList\x12\x19.node.GetPeersListRequest\x1a\x1a.node.GetPeersListResponse\"\x00\x12Y\n\x12\x41\x64\x64NodeToPeersList\x12\x1f.node.AddNodeToPeersListRequest\x1a .node.AddNodeToPeersListResponse\"\x00\x12J\n\rConnectAsPeer\x12\x1a.node.ConnectAsPeerRequest\x1a\x1b.node.ConnectAsPeerResponse\"\x00\x12\x41\n\nIsNodeLive\x12\x17.node.IsNodeLiveRequest\x1a\x18.node.IsNodeLiveResponse\"\x00\x12G\n\x0cRelayMessage\x12\x19.node.RelayMessageRequest\x1a\x1a.node.RelayMessageResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nnode.proto\x12\x04node\"\x8c\x01\n\x07Version\x12\x15\n\rmajor_version\x18\x01 \x01(\r\x12\x15\n\rminor_version\x18\x02 \x01(\r\x12\x10\n\x08is_alpha\x18\x03 \x01(\x08\x12\x0f\n\x07is_beta\x18\x04 \x01(\x08\x12\x1c\n\x14is_release_candidate\x18\x05 \x01(\x08\x12\x12\n\nis_release\x18\x06 \x01(\x08\"\x97\x01\n\x08NodeInfo\x12\x14\n\x0cnode_address\x18\x01 \x01(\t\x12\'\n\x10software_version\x18\x02 \x01(\x0b\x32\r.node.Version\x12L\n\x1dsupported_communication_types\x18\x03 \x01(\x0e\x32%.node.NodeSupportedCommunicationTypes\"g\n\nNodeSecret\x12\x1a\n\x12secret_private_key\x18\x01 \x01(\t\x12\x1a\n\x12secret_node_primer\x18\x02 \x01(\t\x12!\n\x19secret_amplicon_threshold\x18\x03 \x01(\x04\"\xb9\x02\n\x0eNodeProperties\x12!\n\tnode_info\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12&\n\x0cnode_secrets\x18\x02 \x01(\x0b\x32\x10.node.NodeSecret\x12\x11\n\tmax_peers\x18\x03 \x01(\x05\x12>\n6can_exceed_max_peers_if_destination_node_not_reachable\x18\x04 \x01(\x08\x12\x39\n1max_time_to_wait_for_destination_node_response_ms\x18\x05 \x01(\r\x12 \n\x18\x65nable_packet_forwarding\x18\x06 \x01(\x08\x12,\n\x14\x62ootstrap_peers_list\x18\x07 \x03(\x0b\x32\x0e.node.NodeInfo\"<\n\x0eResponseStatus\x12\x15\n\ris_successful\x18\x01 \x01(\x08\x12\x13\n\x0bstatus_text\x18\x02 \x01(\t\"~\n\x13GetPeersListRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x19\n\x11max_desired_peers\x18\x02 \x01(\r\x12#\n\x1brequest_utc_timestamp_nanos\x18\x03 \x01(\x04\"`\n\x14GetPeersListResponse\x12\"\n\npeers_list\x18\x01 \x03(\x0b\x32\x0e.node.NodeInfo\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x02 \x01(\x04\"i\n\x19\x41\x64\x64NodeToPeersListRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"\x9a\x01\n\x1a\x41\x64\x64NodeToPeersListResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12-\n\x0fresponse_status\x18\x02 \x01(\x0b\x32\x14.node.ResponseStatus\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"d\n\x14\x43onnectAsPeerRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"\x95\x01\n\x15\x43onnectAsPeerResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12-\n\x0fresponse_status\x18\x02 \x01(\x0b\x32\x14.node.ResponseStatus\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"a\n\x11IsNodeLiveRequest\x12\'\n\x0frequesting_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12#\n\x1brequest_utc_timestamp_nanos\x18\x02 \x01(\x04\"t\n\x12IsNodeLiveResponse\x12\'\n\x0fresponding_node\x18\x01 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x0f\n\x07is_live\x18\x02 \x01(\x08\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x03 \x01(\x04\"N\n\nRawMessage\x12\'\n\x0cmessage_type\x18\x01 \x01(\x0e\x32\x11.node.MessageType\x12\x17\n\x0fmessage_content\x18\x02 \x01(\x0c\"^\n\x10\x45ncryptedMessage\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12!\n\x19\x65ncrypted_message_content\x18\x02 \x01(\x0c\x12\x13\n\x0bmessage_dna\x18\x03 \x01(\t\"\xa4\x01\n\x13RelayMessageRequest\x12\'\n\x07message\x18\x01 \x01(\x0b\x32\x16.node.EncryptedMessage\x12\'\n\x0frequesting_node\x18\x02 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x16\n\x0e\x64\x65stination_id\x18\x03 \x01(\t\x12#\n\x1brequest_utc_timestamp_nanos\x18\x04 \x01(\x04\"\x9f\x01\n\x14RelayMessageResponse\x12$\n\x06status\x18\x01 \x01(\x0b\x32\x14.node.ResponseStatus\x12\'\n\x0fresponding_node\x18\x02 \x01(\x0b\x32\x0e.node.NodeInfo\x12\x12\n\nmessage_id\x18\x03 \x01(\t\x12$\n\x1cresponse_utc_timestamp_nanos\x18\x04 \x01(\x04*\xa9\x01\n\x1fNodeSupportedCommunicationTypes\x12\x0b\n\x07UNKNOWN\x10\x00\x12\n\n\x06SECURE\x10\x01\x12\x0c\n\x08UNSECURE\x10\x02\x12\x17\n\x13SECURE_AND_UNSECURE\x10\x03\x12\x11\n\rSECURE_STREAM\x10\x04\x12\x13\n\x0fUNSECURE_STREAM\x10\x05\x12\x1e\n\x1aSECURE_AND_UNSECURE_STREAM\x10\x06*c\n\x0bMessageType\x12\x0f\n\x0bUNSPECIFIED\x10\x00\x12\r\n\tHANDSHAKE\x10\x01\x12\x13\n\x0f\x41\x43KNOWLEDGEMENT\x10\x02\x12\x13\n\x0f\x44ISCRETE_PACKET\x10\x03\x12\n\n\x06STREAM\x10\x04\x32\x82\x03\n\x04Node\x12G\n\x0cGetPeersList\x12\x19.node.GetPeersListRequest\x1a\x1a.node.GetPeersListResponse\"\x00\x12Y\n\x12\x41\x64\x64NodeToPeersList\x12\x1f.node.AddNodeToPeersListRequest\x1a .node.AddNodeToPeersListResponse\"\x00\x12J\n\rConnectAsPeer\x12\x1a.node.ConnectAsPeerRequest\x1a\x1b.node.ConnectAsPeerResponse\"\x00\x12\x41\n\nIsNodeLive\x12\x17.node.IsNodeLiveRequest\x1a\x18.node.IsNodeLiveResponse\"\x00\x12G\n\x0cRelayMessage\x12\x19.node.RelayMessageRequest\x1a\x1a.node.RelayMessageResponse\"\x00\x62\x06proto3')
 
 _NODESUPPORTEDCOMMUNICATIONTYPES = DESCRIPTOR.enum_types_by_name['NodeSupportedCommunicationTypes']
 NodeSupportedCommunicationTypes = enum_type_wrapper.EnumTypeWrapper(_NODESUPPORTEDCOMMUNICATIONTYPES)
+_MESSAGETYPE = DESCRIPTOR.enum_types_by_name['MessageType']
+MessageType = enum_type_wrapper.EnumTypeWrapper(_MESSAGETYPE)
 UNKNOWN = 0
 SECURE = 1
 UNSECURE = 2
@@ -26,6 +28,11 @@ SECURE_AND_UNSECURE = 3
 SECURE_STREAM = 4
 UNSECURE_STREAM = 5
 SECURE_AND_UNSECURE_STREAM = 6
+UNSPECIFIED = 0
+HANDSHAKE = 1
+ACKNOWLEDGEMENT = 2
+DISCRETE_PACKET = 3
+STREAM = 4
 
 
 _VERSION = DESCRIPTOR.message_types_by_name['Version']
@@ -41,6 +48,7 @@ _CONNECTASPEERREQUEST = DESCRIPTOR.message_types_by_name['ConnectAsPeerRequest']
 _CONNECTASPEERRESPONSE = DESCRIPTOR.message_types_by_name['ConnectAsPeerResponse']
 _ISNODELIVEREQUEST = DESCRIPTOR.message_types_by_name['IsNodeLiveRequest']
 _ISNODELIVERESPONSE = DESCRIPTOR.message_types_by_name['IsNodeLiveResponse']
+_RAWMESSAGE = DESCRIPTOR.message_types_by_name['RawMessage']
 _ENCRYPTEDMESSAGE = DESCRIPTOR.message_types_by_name['EncryptedMessage']
 _RELAYMESSAGEREQUEST = DESCRIPTOR.message_types_by_name['RelayMessageRequest']
 _RELAYMESSAGERESPONSE = DESCRIPTOR.message_types_by_name['RelayMessageResponse']
@@ -135,6 +143,13 @@ IsNodeLiveResponse = _reflection.GeneratedProtocolMessageType('IsNodeLiveRespons
   })
 _sym_db.RegisterMessage(IsNodeLiveResponse)
 
+RawMessage = _reflection.GeneratedProtocolMessageType('RawMessage', (_message.Message,), {
+  'DESCRIPTOR' : _RAWMESSAGE,
+  '__module__' : 'node_pb2'
+  # @@protoc_insertion_point(class_scope:node.RawMessage)
+  })
+_sym_db.RegisterMessage(RawMessage)
+
 EncryptedMessage = _reflection.GeneratedProtocolMessageType('EncryptedMessage', (_message.Message,), {
   'DESCRIPTOR' : _ENCRYPTEDMESSAGE,
   '__module__' : 'node_pb2'
@@ -160,40 +175,44 @@ _NODE = DESCRIPTOR.services_by_name['Node']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _NODESUPPORTEDCOMMUNICATIONTYPES._serialized_start=2105
-  _NODESUPPORTEDCOMMUNICATIONTYPES._serialized_end=2274
-  _VERSION._serialized_start=20
-  _VERSION._serialized_end=75
-  _NODEINFO._serialized_start=78
-  _NODEINFO._serialized_end=229
-  _NODESECRET._serialized_start=231
-  _NODESECRET._serialized_end=334
-  _NODEPROPERTIES._serialized_start=337
-  _NODEPROPERTIES._serialized_end=654
-  _RESPONSESTATUS._serialized_start=656
-  _RESPONSESTATUS._serialized_end=716
-  _GETPEERSLISTREQUEST._serialized_start=718
-  _GETPEERSLISTREQUEST._serialized_end=844
-  _GETPEERSLISTRESPONSE._serialized_start=846
-  _GETPEERSLISTRESPONSE._serialized_end=942
-  _ADDNODETOPEERSLISTREQUEST._serialized_start=944
-  _ADDNODETOPEERSLISTREQUEST._serialized_end=1049
-  _ADDNODETOPEERSLISTRESPONSE._serialized_start=1052
-  _ADDNODETOPEERSLISTRESPONSE._serialized_end=1206
-  _CONNECTASPEERREQUEST._serialized_start=1208
-  _CONNECTASPEERREQUEST._serialized_end=1308
-  _CONNECTASPEERRESPONSE._serialized_start=1311
-  _CONNECTASPEERRESPONSE._serialized_end=1460
-  _ISNODELIVEREQUEST._serialized_start=1462
-  _ISNODELIVEREQUEST._serialized_end=1559
-  _ISNODELIVERESPONSE._serialized_start=1561
-  _ISNODELIVERESPONSE._serialized_end=1677
-  _ENCRYPTEDMESSAGE._serialized_start=1679
-  _ENCRYPTEDMESSAGE._serialized_end=1773
-  _RELAYMESSAGEREQUEST._serialized_start=1776
-  _RELAYMESSAGEREQUEST._serialized_end=1940
-  _RELAYMESSAGERESPONSE._serialized_start=1943
-  _RELAYMESSAGERESPONSE._serialized_end=2102
-  _NODE._serialized_start=2277
-  _NODE._serialized_end=2663
+  _NODESUPPORTEDCOMMUNICATIONTYPES._serialized_start=2267
+  _NODESUPPORTEDCOMMUNICATIONTYPES._serialized_end=2436
+  _MESSAGETYPE._serialized_start=2438
+  _MESSAGETYPE._serialized_end=2537
+  _VERSION._serialized_start=21
+  _VERSION._serialized_end=161
+  _NODEINFO._serialized_start=164
+  _NODEINFO._serialized_end=315
+  _NODESECRET._serialized_start=317
+  _NODESECRET._serialized_end=420
+  _NODEPROPERTIES._serialized_start=423
+  _NODEPROPERTIES._serialized_end=736
+  _RESPONSESTATUS._serialized_start=738
+  _RESPONSESTATUS._serialized_end=798
+  _GETPEERSLISTREQUEST._serialized_start=800
+  _GETPEERSLISTREQUEST._serialized_end=926
+  _GETPEERSLISTRESPONSE._serialized_start=928
+  _GETPEERSLISTRESPONSE._serialized_end=1024
+  _ADDNODETOPEERSLISTREQUEST._serialized_start=1026
+  _ADDNODETOPEERSLISTREQUEST._serialized_end=1131
+  _ADDNODETOPEERSLISTRESPONSE._serialized_start=1134
+  _ADDNODETOPEERSLISTRESPONSE._serialized_end=1288
+  _CONNECTASPEERREQUEST._serialized_start=1290
+  _CONNECTASPEERREQUEST._serialized_end=1390
+  _CONNECTASPEERRESPONSE._serialized_start=1393
+  _CONNECTASPEERRESPONSE._serialized_end=1542
+  _ISNODELIVEREQUEST._serialized_start=1544
+  _ISNODELIVEREQUEST._serialized_end=1641
+  _ISNODELIVERESPONSE._serialized_start=1643
+  _ISNODELIVERESPONSE._serialized_end=1759
+  _RAWMESSAGE._serialized_start=1761
+  _RAWMESSAGE._serialized_end=1839
+  _ENCRYPTEDMESSAGE._serialized_start=1841
+  _ENCRYPTEDMESSAGE._serialized_end=1935
+  _RELAYMESSAGEREQUEST._serialized_start=1938
+  _RELAYMESSAGEREQUEST._serialized_end=2102
+  _RELAYMESSAGERESPONSE._serialized_start=2105
+  _RELAYMESSAGERESPONSE._serialized_end=2264
+  _NODE._serialized_start=2540
+  _NODE._serialized_end=2926
 # @@protoc_insertion_point(module_scope)

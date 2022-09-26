@@ -10,11 +10,16 @@ service Node {
   rpc RelayMessage(RelayMessageRequest) returns (RelayMessageResponse) {}
 }
 
-// NextId: 3
+// NextId: 7
 message Version{
   uint32 major_version = 1;
   uint32 minor_version = 2;
+  bool is_alpha = 3;
+  bool is_beta = 4;
+  bool is_release_candidate = 5;
+  bool is_release = 6;
 }
+
 // Identifies if the RPC channel is secure or unsecure. The secure option currently only supports SSL.
 enum NodeSupportedCommunicationTypes{
   UNKNOWN = 0;
@@ -52,10 +57,11 @@ message NodeSecret{
 message NodeProperties{
   NodeInfo node_info = 1;
   NodeSecret node_secrets = 2;
-  uint32 max_peers = 3;
+  // The value of max_peers when negative (-1) implies no limit.
+  int32 max_peers = 3;
   bool can_exceed_max_peers_if_destination_node_not_reachable = 4;
   uint32 max_time_to_wait_for_destination_node_response_ms = 5;
-  bool non_local_forwarding_enabled = 6;
+  bool enable_packet_forwarding = 6;
   repeated NodeInfo bootstrap_peers_list = 7;
 }
 
@@ -115,6 +121,19 @@ message IsNodeLiveResponse{
   NodeInfo responding_node = 1;
   bool is_live = 2;
   uint64 response_utc_timestamp_nanos = 3;
+}
+
+enum MessageType{
+  UNSPECIFIED = 0;
+  HANDSHAKE = 1;
+  ACKNOWLEDGEMENT = 2;
+  DISCRETE_PACKET = 3;
+  STREAM = 4;
+}
+
+message RawMessage{
+  MessageType message_type = 1;
+  bytes message_content = 2;
 }
 
 // NextId: 4
