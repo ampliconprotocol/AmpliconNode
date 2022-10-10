@@ -129,11 +129,32 @@ enum MessageType{
   ACKNOWLEDGEMENT = 2;
   DISCRETE_PACKET = 3;
   STREAM = 4;
+  BROADCAST = 5;
 }
 
+// A handshake message where the sender specifies the return destination id (this can be a topic id the
+// sender has subscribed to) and the return address is the address of the sender.
+message HandShakeMessage {
+  string return_destination_id = 1;
+  string return_public_key = 2;
+}
+
+// Upon successfully receiving a handshake message if the return parameters are specified, the receiving node
+// is supposed to generate an acknowledgement packet. This is so that the origin knows which message
+// DNA to use.
+message AcknowledgmentMessage {
+  string send_destination_id = 1;
+  string send_public_key = 2;
+}
+
+//NextId: 5
 message RawMessage{
   MessageType message_type = 1;
-  bytes message_content = 2;
+  oneof payload {
+    bytes binary_message_content = 2;
+    HandShakeMessage handshake_message = 3;
+    AcknowledgmentMessage acknowledgement_message = 4;
+  }
 }
 
 // NextId: 4

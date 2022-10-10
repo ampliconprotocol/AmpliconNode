@@ -19,13 +19,20 @@ class Node(node_pb2_grpc.NodeServicer):
         self.node_info = node_properties.node_info
         self.node_secret = node_properties.node_secrets
         self.thread_lock = Lock()
+        # This map contains info about the peers we have connected to.
+        # The key is a node_has obtained by hashing the peer's node_info
+        # The value is the actual node_info
+        # This is used to look-up node_info s
         self.peer_node_hash_to_node_info = {}  # node_hash -> node_info
+        # Similar to the above map, the following map contains info about the grpc channels we have
+        # established with the peers. This is used to issue gRPC on the connected peer nodes.
         self.peer_node_hash_to_channel = {}  # node_hash -> grpc_channel
-
         self.listed_nodes_info = []
         self.is_ready_to_accept_connections = True
-        self.message_center = message_center.MessageCenter()
+        # This is the main threadpool where all the slow work takes place. It also supports timed
+        # (delayed) jobs.
         self.thread_pool = ThreadPoolWithRunDelay()
+        self.message_center = message_center.MessageCenter(self.node_info, self.node_secret, self.thread_pool)
         self.max_connection_attempts_with_peer = 10
         self.wait_time_between_connection_attempts_with_peer_ns = common_utils.convert_seconds_to_ns(10)
         self.__connect_to_bootstrap_or_known_peers(node_properties.bootstrap_peers_list)
@@ -92,13 +99,12 @@ class Node(node_pb2_grpc.NodeServicer):
         decrypted_message = message_utils.maybe_decrypt_message(request.message, self.node_secret)
         if not common_utils.is_empty_bytes(decrypted_message):
             # Message is meant for us
-            self.message_center.process_message(decrypted_message)
+            self.message_center.consume_message(decrypted_message, request)
             return successful_response
         if not message_utils.should_message_be_relayed(request.message, self.node_secret):
             return successful_response
-        self.thread_lock.acquire()
-        self.message_center.relay_message_to_connections(request, self.node_info, self.peer_node_hash_to_channel)
-        self.thread_lock.release()
+        with self.thread_lock:
+            self.message_center.relay_message_to_connections(request, self.peer_node_hash_to_channel)
         return successful_response
 
     def connect_to_peer(self, peer_node_info: node_pb2.NodeInfo):
@@ -134,6 +140,6 @@ class Node(node_pb2_grpc.NodeServicer):
         self.thread_lock.release()
         return
 
-    def __connect_to_bootstrap_or_known_peers(self, peers_node_info:[node_pb2.NodeInfo]):
+    def __connect_to_bootstrap_or_known_peers(self, peers_node_info: [node_pb2.NodeInfo]):
         for peer_node_info in peers_node_info:
             self.connect_to_peer(peer_node_info)
