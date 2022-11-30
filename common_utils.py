@@ -1,6 +1,7 @@
 import hashlib
 import re
 import time
+import uuid
 
 import node_pb2
 
@@ -37,13 +38,54 @@ def is_empty_bytes(input_bytes: bytes) -> bool:
     return False
 
 
+def get_num_digits_in_int(input_num: int) -> bool:
+    if input_num == 0:
+        return 1
+    output = 0
+    input_num = abs(input_num)
+    while input_num > 0:
+        output += 1
+        input_num //= 10
+    return output
+
+
+def is_valid_ip_v4(input_str: str) -> bool:
+    pattern = "^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$"
+    matcher = re.compile(pattern)
+    result = matcher.match(input_str)
+    if result is None:
+        return False
+    digits_count = 0
+    for i in result.groups():
+        digits_count += get_num_digits_in_int(int(i))
+    if len(input_str) != (digits_count + 3):
+        return False
+    return True
+
+
+def is_valid_domain_name(input_str: str) -> bool:
+    pattern = "^([a-z0-9_\-]+)(\.?[a-z0-9_\-]+)?(\.?[a-z0-9_\-]+)?$"
+    matcher = re.compile(pattern, re.IGNORECASE)
+    result = matcher.match(input_str)
+    if result is None:
+        return False
+    return True
+
+
 def is_valid_hostname(hostname: str) -> bool:
     if len(hostname) > 255:
         return False
-    if hostname[-1] == ".":
-        hostname = hostname[:-1]  # strip exactly one dot from the right, if present
-    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-    return all(allowed.match(x) for x in hostname.split("."))
+    pattern = "^([^:]+)(:[0-9]{1,5})?$"
+    matcher = re.compile(pattern)
+    result = matcher.match(hostname)
+    if result is None:
+        return False
+    first_part = result.group(1)
+    if is_valid_ip_v4(first_part):
+        return True
+    if is_valid_domain_name(first_part):
+        return True
+    return False
 
 
 def is_valid_node_info(node_info: node_pb2.NodeInfo) -> bool:
@@ -54,10 +96,19 @@ def is_valid_node_info(node_info: node_pb2.NodeInfo) -> bool:
     return True
 
 
+def make_encoded_str(input_str: str) -> bytes:
+    if isinstance(input_str, str):
+        return input_str.encode('utf-8')
+    if isinstance(input_str, bytes):
+        return input_str
+    return b''
+
+
 def get_node_hash(node_info: node_pb2.NodeInfo) -> str:
     if not is_valid_node_info(node_info):
         return ''
-    return hashlib.sha1(node_info.node_address).hexdigest()
+    encoded_string = make_encoded_str(node_info.node_address)
+    return hashlib.sha1(encoded_string).hexdigest()
 
 
 def get_timestamp_now_ns() -> int:
@@ -66,3 +117,11 @@ def get_timestamp_now_ns() -> int:
 
 def convert_seconds_to_ns(seconds: float) -> int:
     return int(seconds * 10 ** 9)
+
+
+def generate_uuid_string():
+    uuid4_hex_string = str(uuid.uuid4().hex)
+    return uuid4_hex_string
+
+
+

@@ -3,10 +3,23 @@ syntax = "proto3";
 package node;
 // The RPC for a node are defined below.
 service Node {
+  rpc GetNodeInfo(GetNodeInfoRequest) returns (GetNodeInfoResponse) {}
   rpc GetPeersList(GetPeersListRequest) returns (GetPeersListResponse) {}
   rpc AddNodeToPeersList(AddNodeToPeersListRequest) returns (AddNodeToPeersListResponse) {}
   rpc ConnectAsPeer(ConnectAsPeerRequest) returns (ConnectAsPeerResponse) {}
   rpc IsNodeLive(IsNodeLiveRequest) returns (IsNodeLiveResponse) {}
+  // The following RPC issues a search for a valid message DNA. The return is a proto containing the
+  // request id (as acknowledged by the Node) and the time-to-wait (before asking for a
+  // response ) and the time-to-live (for the request's info).
+  rpc EnqueueFindValidMessageDna(EnqueueFindValidMessageDnaRequest) returns (EnqueueFindValidMessageDnaResponse) {}
+  rpc GetFoundMessageDna(GetFoundMessageDnaRequest) returns (GetFoundMessageDnaResponse) {}
+  // The following RPC method consumes a  RelayMessageRequest which has an encrypted message payload.
+  // If the message is meant for the current node, this node can successfully decrypt it.
+  // If successfully decrypted the current node can choose to relay this (with a certain statistical probability) just
+  // to feign ignorance of the end-point. (Thus preserving its anonymity).
+  // If not decrypted, the current node then tries to find an amplicon (using its primer and the message's DNA).
+  // If an amplicon is found and it exceeds the current node's amplicon threshold, the message is relayed to its
+  // connections. Else the message is dropped.
   rpc RelayMessage(RelayMessageRequest) returns (RelayMessageResponse) {}
 }
 
@@ -20,26 +33,37 @@ message Version{
   bool is_release = 6;
 }
 
-// Identifies if the RPC channel is secure or unsecure. The secure option currently only supports SSL.
-enum NodeSupportedCommunicationTypes{
-  UNKNOWN = 0;
-  SECURE = 1;
-  UNSECURE = 2;
-  SECURE_AND_UNSECURE = 3;
-  SECURE_STREAM = 4;
-  UNSECURE_STREAM = 5;
-  SECURE_AND_UNSECURE_STREAM = 6;
-}
-
 // Contains information to uniquely describe a node.
-// NextId: 4
+// NextId: 7
 message NodeInfo{
+  // Identifies if the RPC channel is secure or unsecure. The secure option currently only supports SSL.
+  enum NodeSupportedCommunicationTypes{
+    UNKNOWN = 0;
+    SECURE = 1;
+    UNSECURE = 2;
+    SECURE_AND_UNSECURE = 3;
+    SECURE_STREAM = 4;
+    UNSECURE_STREAM = 5;
+    SECURE_AND_UNSECURE_STREAM = 6;
+  }
+  enum NodeType{
+    UNKNOWN_NODE_TYPE = 0 ;
+    // Indicates the node is a full node. It has both server and client capabilities. It can potentially
+    // be used as a relay server if {@code is_forwarding_enabled} bit is set to true.
+    SERVER_AND_CLIENT = 1;
+    // This is a client only node. It has no ability to relay messages. It can only send messages to a forwarding
+    // server.
+    CLIENT_ONLY = 2;
+  }
   // The fully-qualified node address. It's a host:port combination.
   string node_address = 1;
+  NodeType node_type = 2;
   // The software version the node is running. Major versions start at 0, minor versions start at 1.
-  Version software_version = 2;
+  Version software_version = 3;
   // Whether the node supports secure, unsecure, or both gRPC communication types.
-  NodeSupportedCommunicationTypes supported_communication_types = 3;
+  NodeSupportedCommunicationTypes supported_communication_types = 4;
+  bool is_forwarding_enabled = 5;
+  string forwarding_public_key = 6;
 }
 
 // Contains secret data of a node. This is never to be shared with a second party.
@@ -61,14 +85,28 @@ message NodeProperties{
   int32 max_peers = 3;
   bool can_exceed_max_peers_if_destination_node_not_reachable = 4;
   uint32 max_time_to_wait_for_destination_node_response_ms = 5;
-  bool enable_packet_forwarding = 6;
-  repeated NodeInfo bootstrap_peers_list = 7;
+
+  // This flag enables/disables packet forwarding.
+  bool enable_forwarding_server = 6;
+  uint32 max_candidates_per_request_for_valid_dna_search_for_forwarding_client = 7;
+  repeated NodeInfo bootstrap_peers_list = 8;
 }
 
 // NextId: 3
 message ResponseStatus{
   bool is_successful = 1;
   string status_text = 2;
+}
+
+message GetNodeInfoRequest{
+  NodeInfo requesting_node = 1;
+  uint64 request_utc_timestamp_nanos = 2;
+}
+
+message GetNodeInfoResponse {
+  NodeInfo responding_node = 1;
+  ResponseStatus response_status = 2;
+  uint64 response_utc_timestamp_nanos = 3;
 }
 
 // NextId: 4
@@ -120,53 +158,100 @@ message IsNodeLiveRequest{
 message IsNodeLiveResponse{
   NodeInfo responding_node = 1;
   bool is_live = 2;
-  uint64 response_utc_timestamp_nanos = 3;
+  ResponseStatus response_status = 3;
+  uint64 response_utc_timestamp_nanos = 4;
 }
 
-enum MessageType{
-  UNSPECIFIED = 0;
-  HANDSHAKE = 1;
-  ACKNOWLEDGEMENT = 2;
-  DISCRETE_PACKET = 3;
-  STREAM = 4;
-  BROADCAST = 5;
+
+// The following information uniquely identifies a message's destination.
+// The public-key uniquely identifies the destination node. However, if the destination node is listening
+// behind a relay-node (which has a forwarder_public_key), the combination of the forwarder's public key
+// {@code forwarder_public_key} and the endpoint listen id {@code endpoint_public_key} can be used.
+// NextId: 3
+message MessageEndpointId {
+  string endpoint_public_key = 1;
+  string forwarder_public_key = 2;
 }
 
-// A handshake message where the sender specifies the return destination id (this can be a topic id the
-// sender has subscribed to) and the return address is the address of the sender.
-message HandShakeMessage {
-  string return_destination_id = 1;
-  string return_public_key = 2;
-}
-
-// Upon successfully receiving a handshake message if the return parameters are specified, the receiving node
-// is supposed to generate an acknowledgement packet. This is so that the origin knows which message
-// DNA to use.
-message AcknowledgmentMessage {
-  string send_destination_id = 1;
-  string send_public_key = 2;
-}
-
-//NextId: 5
-message RawMessage{
-  MessageType message_type = 1;
-  oneof payload {
-    bytes binary_message_content = 2;
-    HandShakeMessage handshake_message = 3;
-    AcknowledgmentMessage acknowledgement_message = 4;
-  }
+// This is the request for finding a working message DNA of length {@code dna_length} to reach the destination
+// specified by {@code destination_id}. In case, the requesting client doesn't want to reveal any information
+// regarding the intended destination, the client can specify {@code encrypted_handshake_payload} instead of
+// {@code destination_id}.
+// NextId: 6
+message EnqueueFindValidMessageDnaRequest{
+  NodeInfo requesting_node = 1;
+  // The DNA length desired.
+  uint32 dna_length = 2;
+  // Either the destination_id or the encrypted_handshake_payload needs to be specified.
+  MessageEndpointId destination_id = 3;
+  // If the node issuing the request is listening behind a forwarding node, it has to specify a {@ code source_id}
+  // especially the {@code chained_public_key} component. The way it works is as follows:
+  // The (message) source tries to find an optimal DNA of length {@code: dna_length} to reach destination
+  // identified by some {@code MessageEndpointId}, to establish a session. The search works as follows:
+  // a. The source specifies the {@code MessageEndpointId} identifying the destination it's trying to reach.
+  // b. The source node or the relay server, next creates a handshake packet. The encrypted payload [Encrypted using
+  // information in {@code destination_id} ] of this packet contains the source_id. This way upon successful decryption
+  // the intended destination is able to send an ACKNOWLEDGEMENT packet back to source.
+  // Alternatively, the messaging source can directly specify the contents of the {@code encrypted_handshake_payload}
+  // forgoing step a above. This safeguards the information regarding the intended destination.
+  MessageEndpointId source_id = 4;
+  EncryptedMessageCoreInformation encrypted_handshake_payload = 5;
+  uint64 request_utc_timestamp_nanos = 6;
 }
 
 // NextId: 4
-message EncryptedMessage{
+message EnqueueFindValidMessageDnaResponse{
+  NodeInfo responding_node = 1;
+  string request_id = 2;
+  uint64 estimated_wait_time_for_response_ms = 3;
+  ResponseStatus response_status = 4;
+  uint64 response_utc_timestamp_nanos = 5;
+}
+
+message GetFoundMessageDnaRequest{
+  NodeInfo requesting_node = 1;
+  string request_id = 2;
+  uint64 request_utc_timestamp_nanos = 3;
+}
+
+message GetFoundMessageDnaResponse{
+  NodeInfo responding_node = 1;
+  string request_id = 2;
+  repeated string found_message_dna = 3;
+  ResponseStatus response_status = 4;
+  uint64 response_utc_timestamp_nanos = 5;
+}
+
+
+//NextId: 5
+message MessageCoreInformation{
+  enum MessageType{
+    UNSPECIFIED = 0;
+    HANDSHAKE = 1;
+    ACKNOWLEDGEMENT = 2;
+    BINARY_CONTENT = 3;
+  }
+  MessageType message_type = 1;
+  bytes message_payload = 2;
+  MessageEndpointId source_id = 3;
+  MessageEndpointId destination_id = 4;
+}
+
+// NextId: 2
+message EncryptedMessageCoreInformation{
+  bytes encrypted_message_content = 1;
+}
+
+// NextId:4
+message AmpliconP2PRelayMessage{
   string message_id = 1;
-  bytes encrypted_message_content = 2;
+  EncryptedMessageCoreInformation encrypted_message_core = 2;
   string message_dna = 3;
 }
 
 // NextId: 5
 message RelayMessageRequest{
-  EncryptedMessage message = 1;
+  AmpliconP2PRelayMessage message = 1;
   NodeInfo requesting_node = 2;
   string destination_id = 3;
   uint64 request_utc_timestamp_nanos = 4;
@@ -177,5 +262,9 @@ message RelayMessageResponse{
   ResponseStatus status = 1;
   NodeInfo responding_node = 2;
   string message_id = 3;
-  uint64 response_utc_timestamp_nanos = 4;
+  ResponseStatus response_status = 4;
+  uint64 response_utc_timestamp_nanos = 5;
 }
+
+
+

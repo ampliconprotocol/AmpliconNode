@@ -16,6 +16,7 @@ from thread_pool_with_run_delay import ThreadPoolWithRunDelay
 class Node(node_pb2_grpc.NodeServicer):
     def __init__(self, node_properties: node_pb2.NodeProperties):
         super().__init__()
+        self.node_properties = node_properties
         self.node_info = node_properties.node_info
         self.node_secret = node_properties.node_secrets
         self.thread_lock = Lock()
@@ -37,6 +38,19 @@ class Node(node_pb2_grpc.NodeServicer):
         self.wait_time_between_connection_attempts_with_peer_ns = common_utils.convert_seconds_to_ns(10)
         self.__connect_to_bootstrap_or_known_peers(node_properties.bootstrap_peers_list)
 
+    def GetNodeInfo(self, request: node_pb2.GetNodeInfoRequest, context) -> node_pb2.GetNodeInfoResponse:
+        logging.info(" Got a GetNodeInfo request from : %s at timestamp %d",
+                     request.requesting_node.node_address,
+                     request.request_utc_timestamp_nanos)
+        if not common_utils.is_valid_node_info(request.requesting_node):
+            return node_pb2.GetNodeInfoResponse(
+                response_status=node_pb2.ResponseStatus(is_successful=False, status_text="Invalid requesting node."),
+                response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
+
+        return node_pb2.GetNodeInfoResponse(responding_node=self.node_info,
+                                            response_status=node_pb2.ResponseStatus(is_successful=True),
+                                            response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
+
     def GetPeersList(self, request: node_pb2.GetPeersListRequest, context) -> node_pb2.GetPeersListResponse:
         logging.info(" Got a GetPeerNodes request from : %s for %d peers at timestamp %d",
                      request.requesting_node.node_address,
@@ -44,24 +58,23 @@ class Node(node_pb2_grpc.NodeServicer):
         if not common_utils.is_valid_node_info(request.requesting_node):
             return node_pb2.GetPeersListResponse(
                 response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
-        self.thread_lock.acquire()
-        random.shuffle(self.listed_nodes)
-        listed_nodes_to_return = self.listed_nodes[:request.max_desired_peers]
-        self.thread_lock.release()
+        with self.thread_lock:
+            random.shuffle(self.listed_nodes_info)
+            listed_nodes_to_return = self.listed_nodes_info[:request.max_desired_peers]
+
         return node_pb2.GetPeersListResponse(peers_list=listed_nodes_to_return,
                                              response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
 
     def AddNodeToPeersList(self, request: node_pb2.AddNodeToPeersListRequest,
                            context) -> node_pb2.AddNodeToPeersListResponse:
-        logging.info(" Got a AddNodeToPeers request from : %s with listing %s at timestamp %d",
+        logging.info(" Got a AddNodeToPeers request from : %s at timestamp %d",
                      request.requesting_node.node_address,
-                     'enabled' if request.list_node else 'disabled', request.request_utc_timestamp_nanos)
+                     request.request_utc_timestamp_nanos)
         if not common_utils.is_valid_node_info(request.requesting_node):
             return node_pb2.AddNodeToPeersListResponse(response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
 
-        self.thread_lock.acquire()
-        self.listed_nodes_info.append(request.requesting_node)
-        self.thread_lock.release()
+        with self.thread_lock:
+            self.listed_nodes_info.append(request.requesting_node)
         return node_pb2.AddNodeToPeersListResponse(responding_node=self.node_info,
                                                    response_status=node_pb2.ResponseStatus(is_successful=True),
                                                    response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
@@ -70,10 +83,9 @@ class Node(node_pb2_grpc.NodeServicer):
         if not common_utils.is_valid_node_info(request.requesting_node) or not self.__can_accept_connections():
             return node_pb2.ConnectAsPeerResponse(response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
         node_hash = common_utils.get_node_hash(request.requesting_node)
-        self.thread_lock.acquire()
-        self.peer_node_hash_to_channel[node_hash] = grpc.insecure_channel(request.requesting_node.node_address)
-        self.peer_node_hash_to_node_info[node_hash] = request.requesting_node
-        self.thread_lock.release()
+        with self.thread_lock:
+            self.peer_node_hash_to_channel[node_hash] = grpc.insecure_channel(request.requesting_node.node_address)
+            self.peer_node_hash_to_node_info[node_hash] = request.requesting_node
         return node_pb2.ConnectAsPeerResponse(responding_node=self.node_info,
                                               response_status=node_pb2.ResponseStatus(is_successful=True),
                                               response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
@@ -83,7 +95,24 @@ class Node(node_pb2_grpc.NodeServicer):
             return node_pb2.IsNodeLiveResponse(response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
         return node_pb2.IsNodeLiveResponse(responding_node=self.node_info,
                                            is_live=self.__can_accept_connections(),
+                                           response_status=node_pb2.ResponseStatus(is_successful=True),
                                            response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
+
+    def EnqueueFindValidMessageDna(self, request: node_pb2.EnqueueFindValidMessageDnaRequest,
+                                   context) -> node_pb2.EnqueueFindValidMessageDnaResponse:
+        # We check whether the request is valid and generate a ResponseStatus message.
+        checked_response_status = message_utils.check_enqueue_find_valid_message_dna_request_and_generate_response_status(
+            request)
+        if not checked_response_status.is_successful:
+            return node_pb2.EnqueueFindValidMessageDnaResponse(
+                response_status=checked_response_status,
+                response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
+        request_id = common_utils.generate_uuid_string()
+        return node_pb2.EnqueueFindValidMessageDnaResponse(responding_node=self.node_info,
+                                                           response_status=checked_response_status,
+                                                           request_id=request_id,
+                                                           estimated_wait_time_for_response_ms=1000,
+                                                           response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
 
     def RelayMessage(self, request: node_pb2.RelayMessageRequest, context) -> node_pb2.RelayMessageResponse:
         if not common_utils.is_valid_node_info(request.requesting_node):
@@ -102,6 +131,8 @@ class Node(node_pb2_grpc.NodeServicer):
             self.message_center.consume_message(decrypted_message, request)
             return successful_response
         if not message_utils.should_message_be_relayed(request.message, self.node_secret):
+            # This message should not be relayed according to our internal criteria.
+            # So we are going to silently drop this.
             return successful_response
         with self.thread_lock:
             self.message_center.relay_message_to_connections(request, self.peer_node_hash_to_channel)
@@ -134,11 +165,9 @@ class Node(node_pb2_grpc.NodeServicer):
         _ = stub.ConnectAsPeer(
             node_pb2.ConnectAsPeerRequest(requesting_node=self.node_info,
                                           request_utc_timestamp_nanos=common_utils.get_timestamp_now_ns()))
-        self.thread_lock.acquire()
-        self.peer_node_hash_to_channel[node_hash] = channel
-        self.peer_node_hash_to_node_info[node_hash] = peer_node_info
-        self.thread_lock.release()
-        return
+        with self.thread_lock:
+            self.peer_node_hash_to_channel[node_hash] = channel
+            self.peer_node_hash_to_node_info[node_hash] = peer_node_info
 
     def __connect_to_bootstrap_or_known_peers(self, peers_node_info: [node_pb2.NodeInfo]):
         for peer_node_info in peers_node_info:

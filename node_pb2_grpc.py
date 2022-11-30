@@ -15,6 +15,11 @@ class NodeStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.GetNodeInfo = channel.unary_unary(
+                '/node.Node/GetNodeInfo',
+                request_serializer=node__pb2.GetNodeInfoRequest.SerializeToString,
+                response_deserializer=node__pb2.GetNodeInfoResponse.FromString,
+                )
         self.GetPeersList = channel.unary_unary(
                 '/node.Node/GetPeersList',
                 request_serializer=node__pb2.GetPeersListRequest.SerializeToString,
@@ -35,6 +40,16 @@ class NodeStub(object):
                 request_serializer=node__pb2.IsNodeLiveRequest.SerializeToString,
                 response_deserializer=node__pb2.IsNodeLiveResponse.FromString,
                 )
+        self.EnqueueFindValidMessageDna = channel.unary_unary(
+                '/node.Node/EnqueueFindValidMessageDna',
+                request_serializer=node__pb2.EnqueueFindValidMessageDnaRequest.SerializeToString,
+                response_deserializer=node__pb2.EnqueueFindValidMessageDnaResponse.FromString,
+                )
+        self.GetFoundMessageDna = channel.unary_unary(
+                '/node.Node/GetFoundMessageDna',
+                request_serializer=node__pb2.GetFoundMessageDnaRequest.SerializeToString,
+                response_deserializer=node__pb2.GetFoundMessageDnaResponse.FromString,
+                )
         self.RelayMessage = channel.unary_unary(
                 '/node.Node/RelayMessage',
                 request_serializer=node__pb2.RelayMessageRequest.SerializeToString,
@@ -45,6 +60,12 @@ class NodeStub(object):
 class NodeServicer(object):
     """The RPC for a node are defined below.
     """
+
+    def GetNodeInfo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def GetPeersList(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -70,8 +91,30 @@ class NodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RelayMessage(self, request, context):
+    def EnqueueFindValidMessageDna(self, request, context):
+        """The following RPC issues a search for a valid message DNA. The return is a proto containing the
+        request id (as acknowledged by the Node) and the time-to-wait (before asking for a
+        response ) and the time-to-live (for the request's info).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFoundMessageDna(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RelayMessage(self, request, context):
+        """The following RPC method consumes a  RelayMessageRequest which has an encrypted message payload.
+        If the message is meant for the current node, this node can successfully decrypt it.
+        If successfully decrypted the current node can choose to relay this (with a certain statistical probability) just
+        to feign ignorance of the end-point. (Thus preserving its anonymity).
+        If not decrypted, the current node then tries to find an amplicon (using its primer and the message's DNA).
+        If an amplicon is found and it exceeds the current node's amplicon threshold, the message is relayed to its
+        connections. Else the message is dropped.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -79,6 +122,11 @@ class NodeServicer(object):
 
 def add_NodeServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'GetNodeInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNodeInfo,
+                    request_deserializer=node__pb2.GetNodeInfoRequest.FromString,
+                    response_serializer=node__pb2.GetNodeInfoResponse.SerializeToString,
+            ),
             'GetPeersList': grpc.unary_unary_rpc_method_handler(
                     servicer.GetPeersList,
                     request_deserializer=node__pb2.GetPeersListRequest.FromString,
@@ -99,6 +147,16 @@ def add_NodeServicer_to_server(servicer, server):
                     request_deserializer=node__pb2.IsNodeLiveRequest.FromString,
                     response_serializer=node__pb2.IsNodeLiveResponse.SerializeToString,
             ),
+            'EnqueueFindValidMessageDna': grpc.unary_unary_rpc_method_handler(
+                    servicer.EnqueueFindValidMessageDna,
+                    request_deserializer=node__pb2.EnqueueFindValidMessageDnaRequest.FromString,
+                    response_serializer=node__pb2.EnqueueFindValidMessageDnaResponse.SerializeToString,
+            ),
+            'GetFoundMessageDna': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFoundMessageDna,
+                    request_deserializer=node__pb2.GetFoundMessageDnaRequest.FromString,
+                    response_serializer=node__pb2.GetFoundMessageDnaResponse.SerializeToString,
+            ),
             'RelayMessage': grpc.unary_unary_rpc_method_handler(
                     servicer.RelayMessage,
                     request_deserializer=node__pb2.RelayMessageRequest.FromString,
@@ -114,6 +172,23 @@ def add_NodeServicer_to_server(servicer, server):
 class Node(object):
     """The RPC for a node are defined below.
     """
+
+    @staticmethod
+    def GetNodeInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/node.Node/GetNodeInfo',
+            node__pb2.GetNodeInfoRequest.SerializeToString,
+            node__pb2.GetNodeInfoResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetPeersList(request,
@@ -180,6 +255,40 @@ class Node(object):
         return grpc.experimental.unary_unary(request, target, '/node.Node/IsNodeLive',
             node__pb2.IsNodeLiveRequest.SerializeToString,
             node__pb2.IsNodeLiveResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def EnqueueFindValidMessageDna(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/node.Node/EnqueueFindValidMessageDna',
+            node__pb2.EnqueueFindValidMessageDnaRequest.SerializeToString,
+            node__pb2.EnqueueFindValidMessageDnaResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetFoundMessageDna(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/node.Node/GetFoundMessageDna',
+            node__pb2.GetFoundMessageDnaRequest.SerializeToString,
+            node__pb2.GetFoundMessageDnaResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
