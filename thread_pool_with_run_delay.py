@@ -108,6 +108,9 @@ class ThreadPoolWithRunDelay(object):
         self.job_queue_with_delay.put((0, (stop, ())))
         self.coordinator_thread.join()
 
+    def release_resources(self):
+        self.wait_for_jobs_completion_and_shut_down()
+
     def __get_num_threads(self):
         num_threads = multiprocessing.cpu_count() // 2
         if num_threads == 0:
@@ -115,4 +118,4 @@ class ThreadPoolWithRunDelay(object):
         return num_threads
 
     def __del__(self):
-        self.wait_for_jobs_completion_and_shut_down()
+        self.release_resources()

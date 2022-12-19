@@ -222,19 +222,21 @@ message GetFoundMessageDnaResponse{
   uint64 response_utc_timestamp_nanos = 5;
 }
 
-
 //NextId: 5
 message MessageCoreInformation{
   enum MessageType{
     UNSPECIFIED = 0;
     HANDSHAKE = 1;
-    ACKNOWLEDGEMENT = 2;
+    ACKNOWLEDGEMENT_HANDSHAKE = 2;
     BINARY_CONTENT = 3;
+    ACKNOWLEDGEMENT_BINARY_CONTENT = 4;
   }
   MessageType message_type = 1;
   bytes message_payload = 2;
   MessageEndpointId source_id = 3;
   MessageEndpointId destination_id = 4;
+  uint64 nonce = 5;
+  string message_hash = 6;
 }
 
 // NextId: 2
@@ -249,22 +251,27 @@ message AmpliconP2PRelayMessage{
   string message_dna = 3;
 }
 
+//NextId: 2
+message HandShakePayload{
+  string request_id = 1;
+}
+
 // NextId: 5
 message RelayMessageRequest{
   AmpliconP2PRelayMessage message = 1;
   NodeInfo requesting_node = 2;
-  string destination_id = 3;
-  uint64 request_utc_timestamp_nanos = 4;
+  uint64 request_utc_timestamp_nanos = 3;
 }
 
 // NextId: 5
 message RelayMessageResponse{
-  ResponseStatus status = 1;
-  NodeInfo responding_node = 2;
-  string message_id = 3;
-  ResponseStatus response_status = 4;
-  uint64 response_utc_timestamp_nanos = 5;
+  NodeInfo responding_node = 1;
+  ResponseStatus status = 2;
+  uint64 response_utc_timestamp_nanos = 3;
 }
 
-
-
+// NextId: 3
+message PackableRelayMessageInfo{
+  AmpliconP2PRelayMessage original_message = 1;
+  MessageCoreInformation decrypted_message = 2;
+}

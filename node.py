@@ -10,6 +10,7 @@ import message_center
 import message_utils
 import node_pb2
 import node_pb2_grpc
+from message_io_sink import MessageIoSink
 from thread_pool_with_run_delay import ThreadPoolWithRunDelay
 
 
@@ -33,7 +34,7 @@ class Node(node_pb2_grpc.NodeServicer):
         # This is the main threadpool where all the slow work takes place. It also supports timed
         # (delayed) jobs.
         self.thread_pool = ThreadPoolWithRunDelay()
-        self.message_center = message_center.MessageCenter(self.node_info, self.node_secret, self.thread_pool)
+        self.message_center = message_center.MessageCenter(self.node_properties, self.thread_pool)
         self.max_connection_attempts_with_peer = 10
         self.wait_time_between_connection_attempts_with_peer_ns = common_utils.convert_seconds_to_ns(10)
         self.__connect_to_bootstrap_or_known_peers(node_properties.bootstrap_peers_list)
@@ -108,6 +109,8 @@ class Node(node_pb2_grpc.NodeServicer):
                 response_status=checked_response_status,
                 response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
         request_id = common_utils.generate_uuid_string()
+        self.message_center.enqueue_find_valid_message_dna_request(request_id, request,
+                                                                   self.node_properties.max_candidates_per_request_for_valid_dna_search_for_forwarding_client)
         return node_pb2.EnqueueFindValidMessageDnaResponse(responding_node=self.node_info,
                                                            response_status=checked_response_status,
                                                            request_id=request_id,
@@ -123,29 +126,29 @@ class Node(node_pb2_grpc.NodeServicer):
         successful_response = node_pb2.RelayMessageResponse(
             status=node_pb2.ResponseStatus(is_successful=True),
             responding_node=self.node_info,
-            message_id=request.message.message_id,
             response_utc_timestamp_nanos=common_utils.get_timestamp_now_ns())
-        decrypted_message = message_utils.maybe_decrypt_message(request.message, self.node_secret)
-        if not common_utils.is_empty_bytes(decrypted_message):
-            # Message is meant for us
-            self.message_center.consume_message(decrypted_message, request)
-            return successful_response
-        if not message_utils.should_message_be_relayed(request.message, self.node_secret):
-            # This message should not be relayed according to our internal criteria.
-            # So we are going to silently drop this.
-            return successful_response
-        with self.thread_lock:
-            self.message_center.relay_message_to_connections(request, self.peer_node_hash_to_channel)
+
+        # The bulk of the processing takes place in message_center.push_message_into_relay_queue
+        # Briefly, we first check whether the message is meant for us [if yes we consume it]
+        # If the message isn't meant for us, it is sent to all the connected peers.
+        self.message_center.push_message_into_relay_queue(request.message)
         return successful_response
 
     def connect_to_peer(self, peer_node_info: node_pb2.NodeInfo):
-        self.thread_pool.add_job(job_to_run=self.__connect_to_peer_with_retry, parameters=(peer_node_info, 0))
+        self.thread_pool.add_job(job_to_run=self.__connect_to_peer_with_retry, parameters=(peer_node_info))
 
     def connect_to_bootstrap_or_known_peers(self, peer_nodes_info: [node_pb2.NodeInfo]):
         if common_utils.is_empty_list(peer_nodes_info):
             return
         for peer_node_info in peer_nodes_info:
             self.connect_to_peer(peer_node_info)
+
+    def add_message_sink_for_forwarded_public_key(self, public_key: str, message_sink: MessageIoSink):
+        # TODO: Add the sink into the listening roster on MessageCenter
+        pass
+
+    def release_resources(self):
+        self.thread_pool.release_resources()
 
     def __can_accept_connections(self) -> bool:
         if self.is_ready_to_accept_connections:

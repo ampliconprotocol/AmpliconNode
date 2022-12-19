@@ -6,6 +6,16 @@ import uuid
 import node_pb2
 
 
+def is_empty_integer(input_int: int, return_empty_if_zero=False) -> bool:
+    if not isinstance(input_int, int) and input_int is not None:
+        return True
+    if input_int is None:
+        return True
+    if input_int == 0 and return_empty_if_zero:
+        return True
+    return False
+
+
 def is_empty_object(input_object: object) -> bool:
     if not isinstance(input_object, object):
         raise ValueError("Input is not an object, an object type input was expected.")
@@ -15,7 +25,7 @@ def is_empty_object(input_object: object) -> bool:
 
 
 def is_empty_string(input_str: str) -> bool:
-    if not isinstance(input_str, str):
+    if not isinstance(input_str, str) and input_str is not None:
         raise ValueError("Input is not a string, a string type input was expected.")
     if input_str is None or len(input_str) == 0:
         return True
@@ -31,7 +41,7 @@ def is_empty_list(input_list) -> bool:
 
 
 def is_empty_bytes(input_bytes: bytes) -> bool:
-    if not isinstance(input_bytes, bytes):
+    if not isinstance(input_bytes, bytes) and input_bytes is not None:
         raise ValueError("Input is not a bytes string, a bytes type input was expected.")
     if input_bytes is None or len(input_bytes) == 0:
         return True
@@ -122,6 +132,3 @@ def convert_seconds_to_ns(seconds: float) -> int:
 def generate_uuid_string():
     uuid4_hex_string = str(uuid.uuid4().hex)
     return uuid4_hex_string
-
-
-

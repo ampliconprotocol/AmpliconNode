@@ -1,6 +1,10 @@
 import binascii
+import hashlib
+import random
+import sys
 from random import choices, seed
 
+from google.protobuf.message import DecodeError
 from nacl.exceptions import CryptoError
 from nacl.public import PrivateKey, SealedBox, PublicKey
 
@@ -79,13 +83,20 @@ def is_valid_dna_length(dna_length: int) -> bool:
     return False
 
 
-def is_valid_message_endpoint_id(message_endpoint_id: node_pb2.MessageEndpointId, public_key_length: int = 64) -> bool:
-    if common_utils.is_empty_string(message_endpoint_id.endpoint_public_key):
+def is_valid_public_key(public_key: str, expected_public_key_length=64):
+    if common_utils.is_empty_string(public_key):
         return False
-    if len(message_endpoint_id.endpoint_public_key) != public_key_length:
+    if len(public_key) != expected_public_key_length:
         return False
-    if not common_utils.is_empty_string(message_endpoint_id.forwarder_public_key) and len(
-            message_endpoint_id.forwarder_public_key) != public_key_length:
+    return True
+
+
+def is_valid_message_endpoint_id(message_endpoint_id: node_pb2.MessageEndpointId,
+                                 expected_public_key_length: int = 64) -> bool:
+    if not is_valid_public_key(message_endpoint_id.endpoint_public_key, expected_public_key_length):
+        return False
+    if not common_utils.is_empty_string(message_endpoint_id.forwarder_public_key) and not is_valid_public_key(
+            message_endpoint_id.forwarder_public_key, expected_public_key_length):
         return False
     return True
 
@@ -111,18 +122,37 @@ def encrypt_message_core_information_with_destination_id(
         return node_pb2.EncryptedMessageCoreInformation()
     if common_utils.is_empty_string(message_core_information.destination_id.forwarder_public_key):
         return node_pb2.EncryptedMessageCoreInformation(
-                                         encrypted_message_content=encrypt_message_core_information(
-                                             message_core_information,
-                                             message_core_information.destination_id.endpoint_public_key))
+            encrypted_message_content=encrypt_message_core_information(
+                message_core_information,
+                message_core_information.destination_id.endpoint_public_key))
     encrypted_for_final_endpoint = encrypt_message_core_information(message_core_information,
-                                                               message_core_information.destination_id.endpoint_public_key)
+                                                                    message_core_information.destination_id.endpoint_public_key)
     message_core_information_for_forwarder = node_pb2.MessageCoreInformation(
         message_type=node_pb2.MessageCoreInformation.BINARY_CONTENT, message_payload=encrypted_for_final_endpoint,
         destination_id=message_core_information.destination_id)
     return node_pb2.EncryptedMessageCoreInformation(
-                                         encrypted_message_content=encrypt_message_core_information(
-                                             message_core_information_for_forwarder,
-                                             message_core_information.destination_id.forwarder_public_key))
+        encrypted_message_content=encrypt_message_core_information(
+            message_core_information_for_forwarder,
+            message_core_information.destination_id.forwarder_public_key))
+
+
+def decrypt_encrypted_message_core_information_with_node_secret(
+        amplicon_p2p_relay_message: node_pb2.AmpliconP2PRelayMessage,
+        node_secret: node_pb2.NodeSecret) -> node_pb2.MessageCoreInformation:
+    sealed_box = get_sealed_box_for_private_key(node_secret)
+    try:
+        decrypted_message = sealed_box.decrypt(
+            amplicon_p2p_relay_message.encrypted_message_core.encrypted_message_content)
+    except CryptoError as e1:
+        decrypted_message = None  # Message not meant for this node.
+    if decrypted_message is None:
+        return None
+    output = node_pb2.MessageCoreInformation()
+    try:
+        output.ParseFromString(decrypted_message)
+    except DecodeError as e2:
+        output = None
+    return output
 
 
 def has_valid_message_amplicon(message_dna: str, secret_node_primer: str, secret_node_amplicon_threshold: int) -> bool:
@@ -156,12 +186,24 @@ def generate_primer_or_dna_string(desired_length, allowed_characters="0123456789
     output = ''.join(choices(allowed_characters, k=desired_length))
     return output
 
-#TODO: Modify these things
-def get_message_dna_candidates_for_95_pct_reachability(message_dna_length=128):
-    num_candidates_to_generate = 5000
-    output = []
+
+def generate_message_dna_candidates(message_dna_length=128, num_candidates_to_generate=100) -> [str]:
+    output = set()
     for i in range(num_candidates_to_generate):
-        output.append(generate_primer_or_dna_string(desired_length=message_dna_length))
+        output.add(generate_primer_or_dna_string(desired_length=message_dna_length))
+    return list(output)
+
+
+def get_amplicon_p2p_relay_message(encrypted_message_core: node_pb2.EncryptedMessageCoreInformation, message_dna: str):
+    return node_pb2.AmpliconP2PRelayMessage(message_id=common_utils.generate_uuid_string(),
+                                            encrypted_message_core=encrypted_message_core, message_dna=message_dna)
+
+
+def get_amplicon_p2p_relay_messages_with_different_message_dna(
+        encrypted_message_core: node_pb2.EncryptedMessageCoreInformation, message_dna_list: [str]):
+    output = []
+    for dna in message_dna_list:
+        output.append(get_amplicon_p2p_relay_message(encrypted_message_core=encrypted_message_core, message_dna=dna))
     return output
 
 
@@ -176,3 +218,58 @@ def get_modified_relay_request(relay_request_original: node_pb2.RelayMessageRequ
     return node_pb2.RelayMessageRequest(message=message, requesting_node=relay_request_original.requesting_node,
                                         destination_id=relay_request_original.destination_id,
                                         request_utc_timestamp_nanos=relay_request_original.request_utc_timestamp_nanos)
+
+
+def get_public_key_string_from_private_key_string(secret_private_key: str) -> str:
+    private_key = PrivateKey(
+        private_key=binascii.unhexlify(common_utils.make_encoded_str(secret_private_key)))
+    public_key = binascii.hexlify(bytes(private_key.public_key))
+    return public_key.decode("utf-8")
+
+
+def get_message_core_hash(message_core: node_pb2.MessageCoreInformation) -> str:
+    message_core_without_hash = node_pb2.MessageCoreInformation(message_type=message_core.message_type,
+                                                                message_payload=message_core.message_payload,
+                                                                source_id=message_core.source_id,
+                                                                destination_id=message_core.destination_id,
+                                                                nonce=message_core.nonce)
+    sha1_hash = hashlib.sha1(message_core_without_hash.SerializeToString()).hexdigest()
+    return sha1_hash
+
+
+def get_message_core(message_type: node_pb2.MessageCoreInformation.MessageType,
+                     source_id: node_pb2.MessageEndpointId, destination_id: node_pb2.MessageEndpointId,
+                     message_payload: bytes = None, nonce: int = None) -> node_pb2.MessageCoreInformation:
+    if nonce is None:
+        nonce = random.randint(0, sys.maxsize)
+    temp_message_core = node_pb2.MessageCoreInformation(message_type=message_type, message_payload=message_payload,
+                                                        source_id=source_id, destination_id=destination_id,
+                                                        nonce=nonce)
+    message_hash = get_message_core_hash(temp_message_core)
+    return node_pb2.MessageCoreInformation(message_type=message_type, message_payload=message_payload,
+                                           source_id=source_id, destination_id=destination_id, nonce=nonce,
+                                           message_hash=message_hash)
+
+
+def is_handshake_message(message_core: node_pb2.MessageCoreInformation) -> bool:
+    if message_core.message_type == node_pb2.MessageCoreInformation.HANDSHAKE:
+        return True
+    return False
+
+
+def is_handshake_acknowledgement_message(message_core: node_pb2.MessageCoreInformation) -> bool:
+    if message_core.message_type == node_pb2.MessageCoreInformation.ACKNOWLEDGEMENT_HANDSHAKE:
+        return True
+    return False
+
+
+def is_binary_content_message(message_core: node_pb2.MessageCoreInformation) -> bool:
+    if message_core.message_type == node_pb2.MessageCoreInformation.BINARY_CONTENT:
+        return True
+    return False
+
+
+def is_binary_content_acknowledgement_message(message_core: node_pb2.MessageCoreInformation) -> bool:
+    if message_core.message_type == node_pb2.MessageCoreInformation.ACKNOWLEDGEMENT_BINARY_CONTENT:
+        return True
+    return False

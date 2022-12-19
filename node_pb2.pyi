@@ -630,25 +630,31 @@ class MessageCoreInformation(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         UNSPECIFIED: MessageCoreInformation._MessageType.ValueType  # 0
         HANDSHAKE: MessageCoreInformation._MessageType.ValueType  # 1
-        ACKNOWLEDGEMENT: MessageCoreInformation._MessageType.ValueType  # 2
+        ACKNOWLEDGEMENT_HANDSHAKE: MessageCoreInformation._MessageType.ValueType  # 2
         BINARY_CONTENT: MessageCoreInformation._MessageType.ValueType  # 3
+        ACKNOWLEDGEMENT_BINARY_CONTENT: MessageCoreInformation._MessageType.ValueType  # 4
 
     class MessageType(_MessageType, metaclass=_MessageTypeEnumTypeWrapper): ...
     UNSPECIFIED: MessageCoreInformation.MessageType.ValueType  # 0
     HANDSHAKE: MessageCoreInformation.MessageType.ValueType  # 1
-    ACKNOWLEDGEMENT: MessageCoreInformation.MessageType.ValueType  # 2
+    ACKNOWLEDGEMENT_HANDSHAKE: MessageCoreInformation.MessageType.ValueType  # 2
     BINARY_CONTENT: MessageCoreInformation.MessageType.ValueType  # 3
+    ACKNOWLEDGEMENT_BINARY_CONTENT: MessageCoreInformation.MessageType.ValueType  # 4
 
     MESSAGE_TYPE_FIELD_NUMBER: builtins.int
     MESSAGE_PAYLOAD_FIELD_NUMBER: builtins.int
     SOURCE_ID_FIELD_NUMBER: builtins.int
     DESTINATION_ID_FIELD_NUMBER: builtins.int
+    NONCE_FIELD_NUMBER: builtins.int
+    MESSAGE_HASH_FIELD_NUMBER: builtins.int
     message_type: global___MessageCoreInformation.MessageType.ValueType
     message_payload: builtins.bytes
     @property
     def source_id(self) -> global___MessageEndpointId: ...
     @property
     def destination_id(self) -> global___MessageEndpointId: ...
+    nonce: builtins.int
+    message_hash: builtins.str
     def __init__(
         self,
         *,
@@ -656,9 +662,11 @@ class MessageCoreInformation(google.protobuf.message.Message):
         message_payload: builtins.bytes = ...,
         source_id: global___MessageEndpointId | None = ...,
         destination_id: global___MessageEndpointId | None = ...,
+        nonce: builtins.int = ...,
+        message_hash: builtins.str = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["destination_id", b"destination_id", "source_id", b"source_id"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["destination_id", b"destination_id", "message_payload", b"message_payload", "message_type", b"message_type", "source_id", b"source_id"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["destination_id", b"destination_id", "message_hash", b"message_hash", "message_payload", b"message_payload", "message_type", b"message_type", "nonce", b"nonce", "source_id", b"source_id"]) -> None: ...
 
 global___MessageCoreInformation = MessageCoreInformation
 
@@ -702,6 +710,22 @@ class AmpliconP2PRelayMessage(google.protobuf.message.Message):
 
 global___AmpliconP2PRelayMessage = AmpliconP2PRelayMessage
 
+class HandShakePayload(google.protobuf.message.Message):
+    """NextId: 2"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    REQUEST_ID_FIELD_NUMBER: builtins.int
+    request_id: builtins.str
+    def __init__(
+        self,
+        *,
+        request_id: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["request_id", b"request_id"]) -> None: ...
+
+global___HandShakePayload = HandShakePayload
+
 class RelayMessageRequest(google.protobuf.message.Message):
     """NextId: 5"""
 
@@ -709,24 +733,21 @@ class RelayMessageRequest(google.protobuf.message.Message):
 
     MESSAGE_FIELD_NUMBER: builtins.int
     REQUESTING_NODE_FIELD_NUMBER: builtins.int
-    DESTINATION_ID_FIELD_NUMBER: builtins.int
     REQUEST_UTC_TIMESTAMP_NANOS_FIELD_NUMBER: builtins.int
     @property
     def message(self) -> global___AmpliconP2PRelayMessage: ...
     @property
     def requesting_node(self) -> global___NodeInfo: ...
-    destination_id: builtins.str
     request_utc_timestamp_nanos: builtins.int
     def __init__(
         self,
         *,
         message: global___AmpliconP2PRelayMessage | None = ...,
         requesting_node: global___NodeInfo | None = ...,
-        destination_id: builtins.str = ...,
         request_utc_timestamp_nanos: builtins.int = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["message", b"message", "requesting_node", b"requesting_node"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["destination_id", b"destination_id", "message", b"message", "request_utc_timestamp_nanos", b"request_utc_timestamp_nanos", "requesting_node", b"requesting_node"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["message", b"message", "request_utc_timestamp_nanos", b"request_utc_timestamp_nanos", "requesting_node", b"requesting_node"]) -> None: ...
 
 global___RelayMessageRequest = RelayMessageRequest
 
@@ -735,29 +756,44 @@ class RelayMessageResponse(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    STATUS_FIELD_NUMBER: builtins.int
     RESPONDING_NODE_FIELD_NUMBER: builtins.int
-    MESSAGE_ID_FIELD_NUMBER: builtins.int
-    RESPONSE_STATUS_FIELD_NUMBER: builtins.int
+    STATUS_FIELD_NUMBER: builtins.int
     RESPONSE_UTC_TIMESTAMP_NANOS_FIELD_NUMBER: builtins.int
     @property
-    def status(self) -> global___ResponseStatus: ...
-    @property
     def responding_node(self) -> global___NodeInfo: ...
-    message_id: builtins.str
     @property
-    def response_status(self) -> global___ResponseStatus: ...
+    def status(self) -> global___ResponseStatus: ...
     response_utc_timestamp_nanos: builtins.int
     def __init__(
         self,
         *,
-        status: global___ResponseStatus | None = ...,
         responding_node: global___NodeInfo | None = ...,
-        message_id: builtins.str = ...,
-        response_status: global___ResponseStatus | None = ...,
+        status: global___ResponseStatus | None = ...,
         response_utc_timestamp_nanos: builtins.int = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["responding_node", b"responding_node", "response_status", b"response_status", "status", b"status"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["message_id", b"message_id", "responding_node", b"responding_node", "response_status", b"response_status", "response_utc_timestamp_nanos", b"response_utc_timestamp_nanos", "status", b"status"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["responding_node", b"responding_node", "status", b"status"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["responding_node", b"responding_node", "response_utc_timestamp_nanos", b"response_utc_timestamp_nanos", "status", b"status"]) -> None: ...
 
 global___RelayMessageResponse = RelayMessageResponse
+
+class PackableRelayMessageInfo(google.protobuf.message.Message):
+    """NextId: 3"""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    ORIGINAL_MESSAGE_FIELD_NUMBER: builtins.int
+    DECRYPTED_MESSAGE_FIELD_NUMBER: builtins.int
+    @property
+    def original_message(self) -> global___AmpliconP2PRelayMessage: ...
+    @property
+    def decrypted_message(self) -> global___MessageCoreInformation: ...
+    def __init__(
+        self,
+        *,
+        original_message: global___AmpliconP2PRelayMessage | None = ...,
+        decrypted_message: global___MessageCoreInformation | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["decrypted_message", b"decrypted_message", "original_message", b"original_message"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["decrypted_message", b"decrypted_message", "original_message", b"original_message"]) -> None: ...
+
+global___PackableRelayMessageInfo = PackableRelayMessageInfo

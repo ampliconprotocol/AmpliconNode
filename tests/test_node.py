@@ -17,15 +17,18 @@ class TestNode(TestCase):
         self.fake_remote_node_secret = self.__make_fake_remote_node_secret()
         self.fake_remote_node_properties = node_pb2.NodeProperties(node_info=self.fake_remote_node_info,
                                                                    node_secrets=self.fake_remote_node_secret)
-        node_servicer = Node(node_properties=self.fake_remote_node_properties)
+        self.node_servicer1 = Node(node_properties=self.fake_remote_node_properties)
         servicers = {
-            node_pb2.DESCRIPTOR.services_by_name['Node']: node_servicer
+            node_pb2.DESCRIPTOR.services_by_name['Node']: self.node_servicer1
         }
         self.test_server = server_from_dictionary(
             servicers, strict_real_time())
 
         self.fake_client_node_address = "11.0.0.1:4040"
         self.fake_client_node_info = self.__make_node_info(self.fake_client_node_address)
+
+    def tearDown(self) -> None:
+        self.node_servicer1.release_resources()
 
     def test_get_node_info(self):
         get_node_info_request_valid = node_pb2.GetNodeInfoRequest(
@@ -66,7 +69,6 @@ class TestNode(TestCase):
         response, metadata, code, details = method.termination()
         self.assertEqual(code, StatusCode.OK)
         self.assertFalse(common_utils.is_empty_object(response))
-        print(response)
         self.assertEqual(response.response_status, node_pb2.ResponseStatus(is_successful=True))
         self.assertEqual(response.responding_node, self.fake_remote_node_info)
 
@@ -189,7 +191,9 @@ class TestNode(TestCase):
                                  supported_communication_types=supported_communication_types)
 
     def __make_fake_remote_node_secret(self):
-        return node_pb2.NodeSecret(secret_private_key="", secret_node_primer="AT", secret_amplicon_threshold=15)
+        return node_pb2.NodeSecret(
+            secret_private_key="a2b740e7e7b828a4750cbe1ef3bbdb625328a528d0de188b378af82782a33c6c",
+            secret_node_primer="AT", secret_amplicon_threshold=15)
 
     def __add_fake_node_to_peers_list(self):
         self.fake_peer_node1_address = "12.0.0.1:3939"
