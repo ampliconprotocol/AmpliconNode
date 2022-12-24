@@ -31,13 +31,14 @@ class MessageCenter(object):
 
         self.forwarded_public_key_to_message_io_sink = {}
 
-        self.relayed_message_ids = set()
+        self.message_id_to_relay_counts = {}
         self.request_id_to_working_dna_list = {}
         self.request_id_to_request_proto = {}
         self.message_id_to_encrypted_core = {}  # {str: node_pb2.EncryptedMessageCoreInformation}
         self.message_id_to_acknowledgment_status = {}  # {str:bool}
 
         self.message_core_hash_to_serialized_source_id = {}  # {str: source_id:str}
+        self.successfully_sent_message_ids = set()
         self.lock = Lock()
         self.message_io_sink_manager = MessageIoSinkManager(
             thread_pool_with_run_delay=self.thread_pool_with_run_delay_instance,
@@ -52,15 +53,19 @@ class MessageCenter(object):
             return
         self.message_io_sink_manager.add_message_io_sink(sink=message_sink)
 
-    def is_message_relayed_before(self, message: node_pb2.AmpliconP2PRelayMessage) -> bool:
+    def is_message_relayed_max_allowed_times(self, message: node_pb2.AmpliconP2PRelayMessage) -> bool:
         with self.lock:
-            if message.message_id in self.relayed_message_ids:
-                return True
-        return False
+            if message.message_id not in self.message_id_to_relay_counts:
+                return False
+            if self.message_id_to_relay_counts[message.message_id] < self.node_properties.max_relays_per_message_id:
+                return False
+        return True
 
-    def mark_message_as_relayed(self, message: node_pb2.AmpliconP2PRelayMessage):
+    def increment_message_relay_count(self, message: node_pb2.AmpliconP2PRelayMessage, increment: int = 1):
         with self.lock:
-            self.relayed_message_ids.add(message.message_id)
+            if message.message_id not in self.message_id_to_relay_counts:
+                self.message_id_to_relay_counts[message.message_id] = 0
+            self.message_id_to_relay_counts[message.message_id] += 1
 
     def is_message_core_received_before(self,
                                         decrypted_message_core: node_pb2.MessageCoreInformation):
@@ -113,9 +118,9 @@ class MessageCenter(object):
     def process_received_amplicon_p2p_relay_message(self, message: node_pb2.AmpliconP2PRelayMessage):
         if not message_utils.is_valid_amplicon_p2p_relay_message(message):
             return
-        if self.is_message_relayed_before(message):
+        if self.is_message_relayed_max_allowed_times(message):
             return
-        self.mark_message_as_relayed(message)
+        self.increment_message_relay_count(message)
         message_core = self.maybe_decrypt_encrypted_message(message)
         if common_utils.is_empty_object(message_core):
             # Message could not be decrypted, it is not meant for us

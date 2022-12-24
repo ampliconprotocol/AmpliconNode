@@ -167,7 +167,7 @@ global___NodeSecret = NodeSecret
 
 class NodeProperties(google.protobuf.message.Message):
     """Contains all publicly publishable descriptions and private secrets of a node.
-    NextId: 8
+    NextId: 10
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -177,6 +177,7 @@ class NodeProperties(google.protobuf.message.Message):
     MAX_PEERS_FIELD_NUMBER: builtins.int
     CAN_EXCEED_MAX_PEERS_IF_DESTINATION_NODE_NOT_REACHABLE_FIELD_NUMBER: builtins.int
     MAX_TIME_TO_WAIT_FOR_DESTINATION_NODE_RESPONSE_MS_FIELD_NUMBER: builtins.int
+    MAX_RELAYS_PER_MESSAGE_ID_FIELD_NUMBER: builtins.int
     ENABLE_FORWARDING_SERVER_FIELD_NUMBER: builtins.int
     MAX_CANDIDATES_PER_REQUEST_FOR_VALID_DNA_SEARCH_FOR_FORWARDING_CLIENT_FIELD_NUMBER: builtins.int
     BOOTSTRAP_PEERS_LIST_FIELD_NUMBER: builtins.int
@@ -188,6 +189,7 @@ class NodeProperties(google.protobuf.message.Message):
     """The value of max_peers when negative (-1) implies no limit."""
     can_exceed_max_peers_if_destination_node_not_reachable: builtins.bool
     max_time_to_wait_for_destination_node_response_ms: builtins.int
+    max_relays_per_message_id: builtins.int
     enable_forwarding_server: builtins.bool
     """This flag enables/disables packet forwarding."""
     max_candidates_per_request_for_valid_dna_search_for_forwarding_client: builtins.int
@@ -201,12 +203,13 @@ class NodeProperties(google.protobuf.message.Message):
         max_peers: builtins.int = ...,
         can_exceed_max_peers_if_destination_node_not_reachable: builtins.bool = ...,
         max_time_to_wait_for_destination_node_response_ms: builtins.int = ...,
+        max_relays_per_message_id: builtins.int = ...,
         enable_forwarding_server: builtins.bool = ...,
         max_candidates_per_request_for_valid_dna_search_for_forwarding_client: builtins.int = ...,
         bootstrap_peers_list: collections.abc.Iterable[global___NodeInfo] | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["node_info", b"node_info", "node_secrets", b"node_secrets"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["bootstrap_peers_list", b"bootstrap_peers_list", "can_exceed_max_peers_if_destination_node_not_reachable", b"can_exceed_max_peers_if_destination_node_not_reachable", "enable_forwarding_server", b"enable_forwarding_server", "max_candidates_per_request_for_valid_dna_search_for_forwarding_client", b"max_candidates_per_request_for_valid_dna_search_for_forwarding_client", "max_peers", b"max_peers", "max_time_to_wait_for_destination_node_response_ms", b"max_time_to_wait_for_destination_node_response_ms", "node_info", b"node_info", "node_secrets", b"node_secrets"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["bootstrap_peers_list", b"bootstrap_peers_list", "can_exceed_max_peers_if_destination_node_not_reachable", b"can_exceed_max_peers_if_destination_node_not_reachable", "enable_forwarding_server", b"enable_forwarding_server", "max_candidates_per_request_for_valid_dna_search_for_forwarding_client", b"max_candidates_per_request_for_valid_dna_search_for_forwarding_client", "max_peers", b"max_peers", "max_relays_per_message_id", b"max_relays_per_message_id", "max_time_to_wait_for_destination_node_response_ms", b"max_time_to_wait_for_destination_node_response_ms", "node_info", b"node_info", "node_secrets", b"node_secrets"]) -> None: ...
 
 global___NodeProperties = NodeProperties
 

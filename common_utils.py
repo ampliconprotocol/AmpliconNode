@@ -33,6 +33,8 @@ def is_empty_string(input_str: str) -> bool:
 
 
 def is_empty_list(input_list) -> bool:
+    if input_list is None:
+        return True
     if not isinstance(input_list, list):
         raise ValueError("Input is not a list, a list type object was expected.")
     if len(input_list) == 0:

@@ -74,7 +74,7 @@ class ThreadPoolWithRunDelay(object):
         self.coordinator_thread = ThreadDelayCoordinator(self.job_queue_with_delay, self.job_queue, self.shutdown_event)
 
     def add_job(self, job_to_run, parameters=(), run_at_utc_timestamp_ns: int = 0, run_delay_from_now_ns: int = 0):
-        if run_at_utc_timestamp_ns <= 0 and run_delay_from_now_ns > 0:
+        if run_at_utc_timestamp_ns <= 0 < run_delay_from_now_ns:
             run_at_utc_timestamp_ns = common_utils.get_timestamp_now_ns()
             run_at_utc_timestamp_ns += run_delay_from_now_ns
         if run_at_utc_timestamp_ns == 0:
@@ -117,5 +117,5 @@ class ThreadPoolWithRunDelay(object):
             num_threads = 1
         return num_threads
 
-    def __del__(self):
-        self.release_resources()
+    # def __del__(self):
+    #     self.release_resources()

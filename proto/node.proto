@@ -77,7 +77,7 @@ message NodeSecret{
 }
 
 // Contains all publicly publishable descriptions and private secrets of a node.
-// NextId: 8
+// NextId: 10
 message NodeProperties{
   NodeInfo node_info = 1;
   NodeSecret node_secrets = 2;
@@ -85,11 +85,11 @@ message NodeProperties{
   int32 max_peers = 3;
   bool can_exceed_max_peers_if_destination_node_not_reachable = 4;
   uint32 max_time_to_wait_for_destination_node_response_ms = 5;
-
+  uint32 max_relays_per_message_id = 6;
   // This flag enables/disables packet forwarding.
-  bool enable_forwarding_server = 6;
-  uint32 max_candidates_per_request_for_valid_dna_search_for_forwarding_client = 7;
-  repeated NodeInfo bootstrap_peers_list = 8;
+  bool enable_forwarding_server = 7;
+  uint32 max_candidates_per_request_for_valid_dna_search_for_forwarding_client = 8;
+  repeated NodeInfo bootstrap_peers_list = 9;
 }
 
 // NextId: 3
