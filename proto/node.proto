@@ -92,10 +92,11 @@ message NodeProperties{
   repeated NodeInfo bootstrap_peers_list = 9;
 }
 
-// NextId: 3
+// NextId: 4
 message ResponseStatus{
   bool is_successful = 1;
-  string status_text = 2;
+  bool is_pending = 2;
+  string status_text = 3;
 }
 
 message GetNodeInfoRequest{
@@ -272,6 +273,6 @@ message RelayMessageResponse{
 
 // NextId: 3
 message PackableRelayMessageInfo{
-  AmpliconP2PRelayMessage original_message = 1;
-  MessageCoreInformation decrypted_message = 2;
+  AmpliconP2PRelayMessage encrypted_relay_message = 1;
+  MessageCoreInformation decrypted_message_core = 2;
 }

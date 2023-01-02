@@ -273,3 +273,41 @@ def is_binary_content_acknowledgement_message(message_core: node_pb2.MessageCore
     if message_core.message_type == node_pb2.MessageCoreInformation.ACKNOWLEDGEMENT_BINARY_CONTENT:
         return True
     return False
+
+def make_serialized_packable_relay_message(encrypted_p2p_relay_message:node_pb2.AmpliconP2PRelayMessage, decrypted_message_core:node_pb2.MessageCoreInformation) -> bytes:
+    packable_relay_message = node_pb2.PackableRelayMessageInfo(encrypted_relay_message=encrypted_p2p_relay_message, decrypted_message_core=decrypted_message_core)
+    return packable_relay_message.SerializeToString()
+
+def maybe_get_destination_endpoint_from_packable_relay_message(
+        message: node_pb2.PackableRelayMessageInfo) -> node_pb2.MessageEndpointId:
+    if not is_valid_message_endpoint_id(message.decrypted_message_core.destination_id):
+        return None
+    return message.decrypted_message_core.destination_id
+
+
+def maybe_make_encrypted_p2p_relay_message_from_packable_relay_message(message: node_pb2.PackableRelayMessageInfo,
+                                                                       message_dna: str = None):
+    pass
+
+
+def make_string_tuple_from_message_endpoint_id(endpoint_id: node_pb2.MessageEndpointId):
+    if common_utils.is_empty_string(endpoint_id.forwarder_public_key):
+        return endpoint_id.endpoint_public_key, ''
+    return endpoint_id.endpoint_public_key, endpoint_id.forwarder_public_key
+
+
+def maybe_get_source_and_destination_endpoint_id_tuple_from_enqueue_find_valid_message_dna_request(
+        request: node_pb2.EnqueueFindValidMessageDnaRequest) -> (str, str, str, str):
+    if not is_valid_message_endpoint_id(request.source_id) or not is_valid_message_endpoint_id(request.destination_id):
+        return None
+    output = []
+    output.extend(make_string_tuple_from_message_endpoint_id(request.source_id))
+    output.extend(make_string_tuple_from_message_endpoint_id(request.destination_id))
+    return tuple(output)
+
+def get_sink_id_from_endpoint_id(endpoint_id:node_pb2.MessageEndpointId, node_public_key:str = None):
+    if not common_utils.is_empty_string(node_public_key) and endpoint_id.forwarder_public_key != node_public_key:
+        return None
+    if not is_valid_public_key(endpoint_id.endpoint_public_key):
+        return None
+    return endpoint_id.endpoint_public_key

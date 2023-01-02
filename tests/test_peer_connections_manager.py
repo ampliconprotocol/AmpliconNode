@@ -55,7 +55,21 @@ class TestPeerConnectionsManager(TestCase):
         self.assertListEqual(address_list, expected_list)
 
     def test_relay_amplicon_p2p_message_to_all_active_connections(self):
-        self.assertTrue(True)
+        self.peer_connections_manager.add_peer_node(self.fake_remote_node_info)
+        time.sleep(20)
+        # Giving enough time for the periodic checks to run
+        test_amplicon_p2p_relay_message = self.__make_amplicon_p2p_relay_message()
+        self.peer_connections_manager.relay_amplicon_p2p_message_to_all_active_connections(
+            test_amplicon_p2p_relay_message)
+        # Allowing enough time for thread based relay to take effect
+        time.sleep(1)
+        received_request = self.fake_remote_node.pop_request_log()
+        self.assertFalse(common_utils.is_empty_object(received_request))
+        expected_request = node_pb2.RelayMessageRequest(message=test_amplicon_p2p_relay_message,
+                                                        requesting_node=self.node_info,
+                                                        request_utc_timestamp_nanos=received_request.request_utc_timestamp_nanos)
+
+        self.assertEqual(received_request.SerializeToString(), expected_request.SerializeToString())
 
     def test_get_active_peer_nodes_hash(self):
         self.peer_connections_manager.add_peer_node(self.fake_remote_node_info)
@@ -80,3 +94,8 @@ class TestPeerConnectionsManager(TestCase):
                 secret_private_key="a2b740e7e7b828a4750cbe1ef3bbdb625328a528d0de188b378af82782a33c6c",
                 secret_node_primer="GC", secret_amplicon_threshold=16)]
         return node_secrets[int(index) % len(node_secrets)]
+
+    def __make_amplicon_p2p_relay_message(self):
+        encrypted_message_core = node_pb2.EncryptedMessageCoreInformation(encrypted_message_content=b"fake message")
+        return node_pb2.AmpliconP2PRelayMessage(message_id=common_utils.generate_uuid_string(),
+                                                encrypted_message_core=encrypted_message_core, message_dna="ATGC")

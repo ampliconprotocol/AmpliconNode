@@ -18,6 +18,7 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
+@typing_extensions.final
 class Version(google.protobuf.message.Message):
     """NextId: 7"""
 
@@ -49,6 +50,7 @@ class Version(google.protobuf.message.Message):
 
 global___Version = Version
 
+@typing_extensions.final
 class NodeInfo(google.protobuf.message.Message):
     """Contains information to uniquely describe a node.
     NextId: 7
@@ -139,6 +141,7 @@ class NodeInfo(google.protobuf.message.Message):
 
 global___NodeInfo = NodeInfo
 
+@typing_extensions.final
 class NodeSecret(google.protobuf.message.Message):
     """Contains secret data of a node. This is never to be shared with a second party.
     NextId: 4
@@ -165,6 +168,7 @@ class NodeSecret(google.protobuf.message.Message):
 
 global___NodeSecret = NodeSecret
 
+@typing_extensions.final
 class NodeProperties(google.protobuf.message.Message):
     """Contains all publicly publishable descriptions and private secrets of a node.
     NextId: 10
@@ -213,25 +217,30 @@ class NodeProperties(google.protobuf.message.Message):
 
 global___NodeProperties = NodeProperties
 
+@typing_extensions.final
 class ResponseStatus(google.protobuf.message.Message):
     """NextId: 3"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     IS_SUCCESSFUL_FIELD_NUMBER: builtins.int
+    IS_PENDING_FIELD_NUMBER: builtins.int
     STATUS_TEXT_FIELD_NUMBER: builtins.int
     is_successful: builtins.bool
+    is_pending: builtins.bool
     status_text: builtins.str
     def __init__(
         self,
         *,
         is_successful: builtins.bool = ...,
+        is_pending: builtins.bool = ...,
         status_text: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["is_successful", b"is_successful", "status_text", b"status_text"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["is_pending", b"is_pending", "is_successful", b"is_successful", "status_text", b"status_text"]) -> None: ...
 
 global___ResponseStatus = ResponseStatus
 
+@typing_extensions.final
 class GetNodeInfoRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -251,6 +260,7 @@ class GetNodeInfoRequest(google.protobuf.message.Message):
 
 global___GetNodeInfoRequest = GetNodeInfoRequest
 
+@typing_extensions.final
 class GetNodeInfoResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -274,6 +284,7 @@ class GetNodeInfoResponse(google.protobuf.message.Message):
 
 global___GetNodeInfoResponse = GetNodeInfoResponse
 
+@typing_extensions.final
 class GetPeersListRequest(google.protobuf.message.Message):
     """NextId: 4"""
 
@@ -298,6 +309,7 @@ class GetPeersListRequest(google.protobuf.message.Message):
 
 global___GetPeersListRequest = GetPeersListRequest
 
+@typing_extensions.final
 class GetPeersListResponse(google.protobuf.message.Message):
     """NextId: 3"""
 
@@ -318,6 +330,7 @@ class GetPeersListResponse(google.protobuf.message.Message):
 
 global___GetPeersListResponse = GetPeersListResponse
 
+@typing_extensions.final
 class AddNodeToPeersListRequest(google.protobuf.message.Message):
     """NextId: 3"""
 
@@ -339,6 +352,7 @@ class AddNodeToPeersListRequest(google.protobuf.message.Message):
 
 global___AddNodeToPeersListRequest = AddNodeToPeersListRequest
 
+@typing_extensions.final
 class AddNodeToPeersListResponse(google.protobuf.message.Message):
     """NextId: 4"""
 
@@ -364,6 +378,7 @@ class AddNodeToPeersListResponse(google.protobuf.message.Message):
 
 global___AddNodeToPeersListResponse = AddNodeToPeersListResponse
 
+@typing_extensions.final
 class ConnectAsPeerRequest(google.protobuf.message.Message):
     """NextId: 3"""
 
@@ -385,6 +400,7 @@ class ConnectAsPeerRequest(google.protobuf.message.Message):
 
 global___ConnectAsPeerRequest = ConnectAsPeerRequest
 
+@typing_extensions.final
 class ConnectAsPeerResponse(google.protobuf.message.Message):
     """nextId:4"""
 
@@ -410,6 +426,7 @@ class ConnectAsPeerResponse(google.protobuf.message.Message):
 
 global___ConnectAsPeerResponse = ConnectAsPeerResponse
 
+@typing_extensions.final
 class IsNodeLiveRequest(google.protobuf.message.Message):
     """NextId: 3"""
 
@@ -431,6 +448,7 @@ class IsNodeLiveRequest(google.protobuf.message.Message):
 
 global___IsNodeLiveRequest = IsNodeLiveRequest
 
+@typing_extensions.final
 class IsNodeLiveResponse(google.protobuf.message.Message):
     """NextId: 4"""
 
@@ -459,6 +477,7 @@ class IsNodeLiveResponse(google.protobuf.message.Message):
 
 global___IsNodeLiveResponse = IsNodeLiveResponse
 
+@typing_extensions.final
 class MessageEndpointId(google.protobuf.message.Message):
     """The following information uniquely identifies a message's destination.
     The public-key uniquely identifies the destination node. However, if the destination node is listening
@@ -483,6 +502,7 @@ class MessageEndpointId(google.protobuf.message.Message):
 
 global___MessageEndpointId = MessageEndpointId
 
+@typing_extensions.final
 class EnqueueFindValidMessageDnaRequest(google.protobuf.message.Message):
     """This is the request for finding a working message DNA of length {@code dna_length} to reach the destination
     specified by {@code destination_id}. In case, the requesting client doesn't want to reveal any information
@@ -537,6 +557,7 @@ class EnqueueFindValidMessageDnaRequest(google.protobuf.message.Message):
 
 global___EnqueueFindValidMessageDnaRequest = EnqueueFindValidMessageDnaRequest
 
+@typing_extensions.final
 class EnqueueFindValidMessageDnaResponse(google.protobuf.message.Message):
     """NextId: 4"""
 
@@ -568,6 +589,7 @@ class EnqueueFindValidMessageDnaResponse(google.protobuf.message.Message):
 
 global___EnqueueFindValidMessageDnaResponse = EnqueueFindValidMessageDnaResponse
 
+@typing_extensions.final
 class GetFoundMessageDnaRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -590,6 +612,7 @@ class GetFoundMessageDnaRequest(google.protobuf.message.Message):
 
 global___GetFoundMessageDnaRequest = GetFoundMessageDnaRequest
 
+@typing_extensions.final
 class GetFoundMessageDnaResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -620,6 +643,7 @@ class GetFoundMessageDnaResponse(google.protobuf.message.Message):
 
 global___GetFoundMessageDnaResponse = GetFoundMessageDnaResponse
 
+@typing_extensions.final
 class MessageCoreInformation(google.protobuf.message.Message):
     """NextId: 5"""
 
@@ -673,6 +697,7 @@ class MessageCoreInformation(google.protobuf.message.Message):
 
 global___MessageCoreInformation = MessageCoreInformation
 
+@typing_extensions.final
 class EncryptedMessageCoreInformation(google.protobuf.message.Message):
     """NextId: 2"""
 
@@ -689,6 +714,7 @@ class EncryptedMessageCoreInformation(google.protobuf.message.Message):
 
 global___EncryptedMessageCoreInformation = EncryptedMessageCoreInformation
 
+@typing_extensions.final
 class AmpliconP2PRelayMessage(google.protobuf.message.Message):
     """NextId:4"""
 
@@ -713,6 +739,7 @@ class AmpliconP2PRelayMessage(google.protobuf.message.Message):
 
 global___AmpliconP2PRelayMessage = AmpliconP2PRelayMessage
 
+@typing_extensions.final
 class HandShakePayload(google.protobuf.message.Message):
     """NextId: 2"""
 
@@ -729,6 +756,7 @@ class HandShakePayload(google.protobuf.message.Message):
 
 global___HandShakePayload = HandShakePayload
 
+@typing_extensions.final
 class RelayMessageRequest(google.protobuf.message.Message):
     """NextId: 5"""
 
@@ -754,6 +782,7 @@ class RelayMessageRequest(google.protobuf.message.Message):
 
 global___RelayMessageRequest = RelayMessageRequest
 
+@typing_extensions.final
 class RelayMessageResponse(google.protobuf.message.Message):
     """NextId: 5"""
 
@@ -779,24 +808,25 @@ class RelayMessageResponse(google.protobuf.message.Message):
 
 global___RelayMessageResponse = RelayMessageResponse
 
+@typing_extensions.final
 class PackableRelayMessageInfo(google.protobuf.message.Message):
     """NextId: 3"""
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    ORIGINAL_MESSAGE_FIELD_NUMBER: builtins.int
-    DECRYPTED_MESSAGE_FIELD_NUMBER: builtins.int
+    ENCRYPTED_RELAY_MESSAGE_FIELD_NUMBER: builtins.int
+    DECRYPTED_MESSAGE_CORE_FIELD_NUMBER: builtins.int
     @property
-    def original_message(self) -> global___AmpliconP2PRelayMessage: ...
+    def encrypted_relay_message(self) -> global___AmpliconP2PRelayMessage: ...
     @property
-    def decrypted_message(self) -> global___MessageCoreInformation: ...
+    def decrypted_message_core(self) -> global___MessageCoreInformation: ...
     def __init__(
         self,
         *,
-        original_message: global___AmpliconP2PRelayMessage | None = ...,
-        decrypted_message: global___MessageCoreInformation | None = ...,
+        encrypted_relay_message: global___AmpliconP2PRelayMessage | None = ...,
+        decrypted_message_core: global___MessageCoreInformation | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["decrypted_message", b"decrypted_message", "original_message", b"original_message"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["decrypted_message", b"decrypted_message", "original_message", b"original_message"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["decrypted_message_core", b"decrypted_message_core", "encrypted_relay_message", b"encrypted_relay_message"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["decrypted_message_core", b"decrypted_message_core", "encrypted_relay_message", b"encrypted_relay_message"]) -> None: ...
 
 global___PackableRelayMessageInfo = PackableRelayMessageInfo
