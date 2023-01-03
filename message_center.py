@@ -1,4 +1,4 @@
-from threading import Lock
+from threading import Lock, Event
 
 from google.protobuf.message import DecodeError
 
@@ -50,9 +50,14 @@ class MessageCenter(object):
         self.message_core_hash_to_serialized_source_id = {}  # {str: source_id:str}
         self.successfully_sent_message_core_hashes = set()
         self.lock = Lock()
+        # self.is_shutting_down = Event()
         self.message_io_sink_manager = MessageIoSinkManager(
             thread_pool_with_run_delay=self.thread_pool_with_run_delay_instance,
             on_read_from_sink_callback=self.__on_read_from_message_io_sink_callback)
+
+    def release_resources(self):
+        # self.is_shutting_down.set()
+        self.message_io_sink_manager.release_resources()
 
     def send_message_to_sink_by_public_key(self, public_key: str,
                                            encrypted_relay_message: node_pb2.AmpliconP2PRelayMessage,
@@ -68,6 +73,8 @@ class MessageCenter(object):
         self.message_io_sink_manager.add_message_io_sink(sink=message_sink)
 
     def is_message_relayed_max_allowed_times(self, message: node_pb2.AmpliconP2PRelayMessage) -> bool:
+        # if self.is_shutting_down.is_set():
+        #     return True
         with self.lock:
             if message.message_id not in self.message_id_to_relay_counts:
                 return False
@@ -76,6 +83,8 @@ class MessageCenter(object):
         return True
 
     def increment_message_relay_count(self, message: node_pb2.AmpliconP2PRelayMessage, increment: int = 1):
+        # if self.is_shutting_down.is_set():
+        #     return
         with self.lock:
             if message.message_id not in self.message_id_to_relay_counts:
                 self.message_id_to_relay_counts[message.message_id] = 0
@@ -85,6 +94,8 @@ class MessageCenter(object):
                                         decrypted_message_core: node_pb2.MessageCoreInformation):
         message_core_hash = message_utils.get_message_core_hash(decrypted_message_core)
         source_id_serialized_string = decrypted_message_core.source_id.SerializeToString()
+        # if self.is_shutting_down.is_set():
+        #     return False
         with self.lock:
             if message_core_hash in self.message_core_hash_to_serialized_source_id and source_id_serialized_string in \
                     self.message_core_hash_to_serialized_source_id[message_core_hash]:
@@ -95,6 +106,8 @@ class MessageCenter(object):
                                       decrypted_message_core: node_pb2.MessageCoreInformation):
         message_core_hash = message_utils.get_message_core_hash(decrypted_message_core)
         source_id_serialized_string = decrypted_message_core.source_id.SerializeToString()
+        # if self.is_shutting_down.is_set():
+        #     return
         with self.lock:
             if message_core_hash not in self.message_core_hash_to_serialized_source_id:
                 self.message_core_hash_to_serialized_source_id[message_core_hash] = set()
@@ -109,6 +122,8 @@ class MessageCenter(object):
             request_id, request)
         handshake_message_list = message_utils.get_amplicon_p2p_relay_messages_with_different_message_dna(
             encrypted_handshake_message_core, dna_candidates_pool)
+        # if self.is_shutting_down.is_set():
+        #     return
         if common_utils.is_empty_bytes(request.encrypted_handshake_payload.encrypted_message_content):
             # We only listen for response to the EnqueueFindValidMessageDnaRequest request if the forwarding client
             # doesn't want to handle the response. (Which is indicated by providing an empty encrypted Handshake packet
@@ -126,6 +141,8 @@ class MessageCenter(object):
     def get_enqueue_find_message_dna_request_results(self, request_id: str) -> [str]:
         if common_utils.is_empty_string(request_id):
             return None
+        # if self.is_shutting_down.is_set():
+        #     return None
         with self.lock:
             if request_id not in self.request_id_to_request_proto:
                 return None
@@ -134,6 +151,8 @@ class MessageCenter(object):
             return []
 
     def push_message_into_relay_queue(self, amplicon_p2p_relay_message: node_pb2.AmpliconP2PRelayMessage):
+        # if self.is_shutting_down.is_set():
+        #     return
         self.thread_pool_with_run_delay_instance.add_job(self.process_received_amplicon_p2p_relay_message,
                                                          (amplicon_p2p_relay_message,))
 
@@ -142,6 +161,8 @@ class MessageCenter(object):
         return message_utils.decrypt_encrypted_message_core_information_with_node_secret(message, self.node_secret)
 
     def process_received_amplicon_p2p_relay_message(self, message: node_pb2.AmpliconP2PRelayMessage):
+        # if self.is_shutting_down.is_set():
+        #     return
         if not message_utils.is_valid_amplicon_p2p_relay_message(message):
             return
         if self.is_message_relayed_max_allowed_times(message):
@@ -189,6 +210,8 @@ class MessageCenter(object):
         if common_utils.is_empty_string(handshake_packet.request_id):
             return
         request_id = handshake_packet.request_id
+        # if self.is_shutting_down.is_set():
+        #     return
         with self.lock:
             if request_id not in self.request_id_to_request_proto:
                 return
@@ -205,14 +228,8 @@ class MessageCenter(object):
     def process_binary_content_acknowledgement_message(self, original_message: node_pb2.AmpliconP2PRelayMessage,
                                                        decrypted_message_core: node_pb2.MessageCoreInformation):
         sent_message_core_hash = decrypted_message_core.message_payload.decode("utf-8")
-        self.successfully_sent_message_core_hashes.add(sent_message_core_hash)
-
-    def pack_and_send_message_to_sink_by_public_key(self, public_key: str,
-                                                    original_message: node_pb2.AmpliconP2PRelayMessage,
-                                                    decrypted_message_core: node_pb2.MessageCoreInformation):
-        packable_message = node_pb2.PackableRelayMessageInfo(encrypted_relay_message=original_message,
-                                                             decrypted_message_core=decrypted_message_core)
-        self.message_io_sink_manager.write_to_sink(sink_id=public_key, message=packable_message.SerializeToString())
+        with self.lock:
+            self.successfully_sent_message_core_hashes.add(sent_message_core_hash)
 
     def __prepare_handshake_message_from_enqueue_find_valid_message_dna_request(self, request_id: str,
                                                                                 request: node_pb2.EnqueueFindValidMessageDnaRequest) -> node_pb2.EncryptedMessageCoreInformation:
@@ -238,6 +255,8 @@ class MessageCenter(object):
         return message_utils.encrypt_message_core_information_with_destination_id(message_core_information)
 
     def __push_message_batch_into_relay_queue(self, amplicon_p2p_relay_messages: []):
+        # if self.is_shutting_down.is_set():
+        #     return
         for message in amplicon_p2p_relay_messages:
             self.thread_pool_with_run_delay_instance.add_job(self.push_message_into_relay_queue, (message,))
 
@@ -270,3 +289,45 @@ class MessageCenter(object):
             deserialized_message = node_pb2.PackableRelayMessageInfo.FromString(message)
         except DecodeError as e:
             return
+
+        if message_utils.packable_relay_message_contains_decrypted_message_core(deserialized_message):
+            combined_source_destination_id_tuple = message_utils.maybe_get_source_and_destination_endpoint_id_tuple_from_message_core(
+                deserialized_message.decrypted_message_core)
+            with self.lock:
+                if combined_source_destination_id_tuple not in self.endpoint_source_destination_pairs_to_dna_request_id:
+                    return
+                request_id = self.endpoint_source_destination_pairs_to_dna_request_id[
+                    combined_source_destination_id_tuple]
+            dna_candidates = self.get_enqueue_find_message_dna_request_results(request_id)
+            if common_utils.is_empty_list(dna_candidates):
+                return
+            message_core_hash = deserialized_message.decrypted_message_core.message_hash
+            encrypted_message_core = message_utils.encrypt_message_core_information_with_destination_id(
+                deserialized_message.decrypted_message_core)
+            self.thread_pool_with_run_delay_instance.add_job(self.__try_resending_message_with_a_different_dna, (
+                encrypted_message_core, message_core_hash, dna_candidates))
+            return
+        if message_utils.packable_relay_message_contains_encrypted_p2p_message(deserialized_message):
+            self.push_message_into_relay_queue(deserialized_message.encrypted_relay_message)
+
+    def __try_resending_message_with_a_different_dna(self,
+                                                     encrypted_message_core: node_pb2.EncryptedMessageCoreInformation,
+                                                     message_core_hash: str,
+                                                     message_dna_candidates: [str],
+                                                     num_trials: int = 0):
+        # if self.is_shutting_down.is_set():
+        #     return
+        if num_trials > 10 or len(message_dna_candidates) == 0 or num_trials > 2 * len(message_dna_candidates):
+            return
+        dna_index_to_try = num_trials % len(message_dna_candidates)
+        with self.lock:
+            if message_core_hash in self.successfully_sent_message_core_hashes:
+                return
+        new_p2p_relay_message = message_utils.get_amplicon_p2p_relay_message(
+            encrypted_message_core=encrypted_message_core,
+            message_dna=message_dna_candidates[dna_index_to_try])
+        self.push_message_into_relay_queue(new_p2p_relay_message)
+
+        self.thread_pool_with_run_delay_instance.add_job(self.__try_resending_message_with_a_different_dna, (
+            encrypted_message_core, message_core_hash, message_dna_candidates, num_trials + 1),
+                                                         run_delay_from_now_ns=int(10 * 1e9))

@@ -127,9 +127,10 @@ def encrypt_message_core_information_with_destination_id(
                 message_core_information.destination_id.endpoint_public_key))
     encrypted_for_final_endpoint = encrypt_message_core_information(message_core_information,
                                                                     message_core_information.destination_id.endpoint_public_key)
-    message_core_information_for_forwarder = node_pb2.MessageCoreInformation(
+    #TODO: Come up with a better solution than setting source_id to None
+    message_core_information_for_forwarder = get_message_core(
         message_type=node_pb2.MessageCoreInformation.BINARY_CONTENT, message_payload=encrypted_for_final_endpoint,
-        destination_id=message_core_information.destination_id)
+        destination_id=message_core_information.destination_id, source_id=None)
     return node_pb2.EncryptedMessageCoreInformation(
         encrypted_message_content=encrypt_message_core_information(
             message_core_information_for_forwarder,
@@ -274,20 +275,32 @@ def is_binary_content_acknowledgement_message(message_core: node_pb2.MessageCore
         return True
     return False
 
-def make_serialized_packable_relay_message(encrypted_p2p_relay_message:node_pb2.AmpliconP2PRelayMessage, decrypted_message_core:node_pb2.MessageCoreInformation) -> bytes:
-    packable_relay_message = node_pb2.PackableRelayMessageInfo(encrypted_relay_message=encrypted_p2p_relay_message, decrypted_message_core=decrypted_message_core)
+
+def make_serialized_packable_relay_message(encrypted_p2p_relay_message: node_pb2.AmpliconP2PRelayMessage,
+                                           decrypted_message_core: node_pb2.MessageCoreInformation) -> bytes:
+    packable_relay_message = node_pb2.PackableRelayMessageInfo(encrypted_relay_message=encrypted_p2p_relay_message,
+                                                               decrypted_message_core=decrypted_message_core)
     return packable_relay_message.SerializeToString()
+
+
+def packable_relay_message_contains_decrypted_message_core(message: node_pb2.PackableRelayMessageInfo) -> bool:
+    if not is_valid_message_endpoint_id(message.decrypted_message_core.source_id) or not is_valid_message_endpoint_id(
+            message.decrypted_message_core.destination_id):
+        return False
+    if common_utils.is_empty_string(message.decrypted_message_core.message_hash):
+        return False
+    return True
+
+
+def packable_relay_message_contains_encrypted_p2p_message(message: node_pb2.PackableRelayMessageInfo) -> bool:
+    return is_valid_amplicon_p2p_relay_message(message.encrypted_relay_message)
+
 
 def maybe_get_destination_endpoint_from_packable_relay_message(
         message: node_pb2.PackableRelayMessageInfo) -> node_pb2.MessageEndpointId:
     if not is_valid_message_endpoint_id(message.decrypted_message_core.destination_id):
         return None
     return message.decrypted_message_core.destination_id
-
-
-def maybe_make_encrypted_p2p_relay_message_from_packable_relay_message(message: node_pb2.PackableRelayMessageInfo,
-                                                                       message_dna: str = None):
-    pass
 
 
 def make_string_tuple_from_message_endpoint_id(endpoint_id: node_pb2.MessageEndpointId):
@@ -305,7 +318,18 @@ def maybe_get_source_and_destination_endpoint_id_tuple_from_enqueue_find_valid_m
     output.extend(make_string_tuple_from_message_endpoint_id(request.destination_id))
     return tuple(output)
 
-def get_sink_id_from_endpoint_id(endpoint_id:node_pb2.MessageEndpointId, node_public_key:str = None):
+
+def maybe_get_source_and_destination_endpoint_id_tuple_from_message_core(
+        request: node_pb2.MessageCoreInformation) -> (str, str, str, str):
+    if not is_valid_message_endpoint_id(request.source_id) or not is_valid_message_endpoint_id(request.destination_id):
+        return None
+    output = []
+    output.extend(make_string_tuple_from_message_endpoint_id(request.source_id))
+    output.extend(make_string_tuple_from_message_endpoint_id(request.destination_id))
+    return tuple(output)
+
+
+def get_sink_id_from_endpoint_id(endpoint_id: node_pb2.MessageEndpointId, node_public_key: str = None):
     if not common_utils.is_empty_string(node_public_key) and endpoint_id.forwarder_public_key != node_public_key:
         return None
     if not is_valid_public_key(endpoint_id.endpoint_public_key):
